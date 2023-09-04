@@ -5,9 +5,9 @@ import multer from "multer";
 
 import {PrismaClient} from "@prisma/client";
 
+/* eslint-disable no-process-env */
 const prisma = new PrismaClient(),
     imagePath = process.env.IMAGE_PATH,
-
 
     /**
  * storing image files on disk
@@ -33,6 +33,8 @@ const prisma = new PrismaClient(),
             }
         )
     });
+
+/* eslint-enable */
 
 
 /**
