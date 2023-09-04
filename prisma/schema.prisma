@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model images {
+  id    Int     @id @default(autoincrement())
+  story_id    Int?
+  step_major Int?
+  step_minor Int?
+  hash       String? @db.VarChar(100)
+  filetype   String? @db.VarChar(40)
+}
+
+model steps {
+  id     Int      @id @default(autoincrement())
+  story_id    Int?
+  step_major Int?
+  step_minor Int?
+  html       String?
+  stories    stories? @relation(fields: [story_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "story_id")
+}
+
+model stories {
+  id         Int       @id @default(autoincrement())
+  title           String?   @db.VarChar(30)
+  category        String?   @db.VarChar(120)
+  description     String?
+  author          String?
+  story_json      Json?
+  date_created    DateTime  @default(now()) @db.Timestamp(6)
+  date_published  DateTime? @db.Timestamp(6)
+  highlight_index Int?
+  count_views     Int?
+  reading_time    Int?
+  story_interval  Int?
+  display_type    String?   @db.VarChar(20)
+  lang_code       String?   @db.VarChar(10)
+  title_image     String?   @db.VarChar(100)
+  steps           steps[]
+}

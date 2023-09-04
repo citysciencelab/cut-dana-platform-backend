@@ -1,0 +1,7 @@
+.env
+
+# Ignore images, but keep the directory.
+/images/*
+!/images/
+!/images/.keep
+node_modules
