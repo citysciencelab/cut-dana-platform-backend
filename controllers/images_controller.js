@@ -1,15 +1,16 @@
 import mime from "mime-types";
 import path from "path";
 import multer from "multer";
-
+import {fileURLToPath} from "url";
 
 import {PrismaClient} from "@prisma/client";
 
-/* eslint-disable no-process-env */
-const prisma = new PrismaClient(),
-    imagePath = process.env.IMAGE_PATH,
+const __filename = fileURLToPath(import.meta.url),
+    __dirname = path.dirname(__filename),
+    prisma = new PrismaClient(),
+    imagePath = process.env.IMAGE_PATH; // eslint-disable-line no-process-env
 
-    /**
+/**
  * storing image files on disk
  *
  * @param {Object} request description
@@ -17,24 +18,23 @@ const prisma = new PrismaClient(),
  * @param {function} next description
  * @returns {void}
  */
-    // AFTER : Create multer object
-    imageUpload = multer({
-        storage: multer.diskStorage(
-            {
-                destination: (req, file, cb) => {
-                    cb(null, imagePath);
-                },
-                filename: (req, file, cb) => {
-                    cb(
-                        null,
-                        req.params.image_hash + "." + mime.extension(file.mimetype)
-                    );
-                }
+// AFTER : Create multer object
+// eslint-disable-next-line one-var
+const imageUpload = multer({
+    storage: multer.diskStorage(
+        {
+            destination: (req, file, cb) => {
+                cb(null, imagePath);
+            },
+            filename: (req, file, cb) => {
+                cb(
+                    null,
+                    req.params.image_hash + "." + mime.extension(file.mimetype)
+                );
             }
-        )
-    });
-
-/* eslint-enable */
+        }
+    )
+});
 
 
 /**
@@ -102,7 +102,7 @@ function addImagePath (request, response, next) {
             story_id: parseInt(request.params.story_id, 10),
             step_major: parseInt(request.params.step_major, 10),
             step_minor: parseInt(request.params.step_minor, 10),
-            hash: request.params.hash
+            hash: request.params.image_hash
         }
     }).then(() => {
         response.status(201).json({sucess: true, filepath});
