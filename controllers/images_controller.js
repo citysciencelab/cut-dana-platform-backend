@@ -1,14 +1,17 @@
 import mime from "mime-types";
-import path from "path";
+import {S3Client} from "@aws-sdk/client-s3";
 import multer from "multer";
-import {fileURLToPath} from "url";
-
+import multerS3 from "multer-s3";
 import {PrismaClient} from "@prisma/client";
 
-const __filename = fileURLToPath(import.meta.url),
-    __dirname = path.dirname(__filename),
-    prisma = new PrismaClient(),
-    imagePath = process.env.IMAGE_PATH; // eslint-disable-line no-process-env
+/* eslint-disable no-process-env */
+
+const prisma = new PrismaClient(),
+    s3client = new S3Client({
+        secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
+        accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION
+    });
 
 /**
  * storing image files on disk
@@ -21,46 +24,17 @@ const __filename = fileURLToPath(import.meta.url),
 // AFTER : Create multer object
 // eslint-disable-next-line one-var
 const imageUpload = multer({
-    storage: multer.diskStorage(
-        {
-            destination: (req, file, cb) => {
-                cb(null, imagePath);
-            },
-            filename: (req, file, cb) => {
-                cb(
-                    null,
-                    req.params.image_hash + "." + mime.extension(file.mimetype)
-                );
-            }
+    storage: multerS3({
+        s3: s3client,
+        acl: "public-read",
+        bucket: process.env.AWS_BUCKET_NAME,
+        key: function (req, file, cb) {
+            cb(null, req.params.image_hash + "." + mime.extension(file.mimetype));
         }
-    )
+    })
 });
 
-
-/**
- * description
- *
- * @param {Object} request description
- * @param {Number} response description
- * @param {function} next description
- * @returns {void}
- */
-function getImage (request, response, next) {
-    prisma.images.findFirstOrThrow({
-        where: {
-            story_id: parseInt(request.params.story_id, 10),
-            step_major: parseInt(request.params.step_major, 10),
-            step_minor: parseInt(request.params.step_minor, 10)
-        }
-    }).then((image) => {
-        const image_path = imagePath + image.hash + "." + mime.extension(image.filetype);
-
-        response.sendFile(image_path, {root: path.join(__dirname, "/../")});
-    }).catch((err) => {
-        next(err);
-    });
-}
-
+/* eslint-enable no-process-env */
 
 /**
  * Retrieves image by id from database
@@ -74,11 +48,11 @@ function getImageById (request, response, next) {
     prisma.images.findFirstOrThrow({
         where: {
             hash: request.params.image_hash
+        }, select: {
+            location: true
         }
     }).then((image) => {
-        const image_path = imagePath + image.hash + "." + mime.extension(image.filetype);
-
-        response.sendFile(image_path, {root: path.join(__dirname, "/../")});
+        response.status(301).redirect(image.location);
     }).catch((err) => {
         next(err);
     });
@@ -94,7 +68,7 @@ function getImageById (request, response, next) {
  * @returns {void}
  */
 function addImagePath (request, response, next) {
-    const filepath = request.file.path;
+    const filepath = request.file.location;
 
     prisma.images.create({
         data: {
@@ -102,7 +76,9 @@ function addImagePath (request, response, next) {
             story_id: parseInt(request.params.story_id, 10),
             step_major: parseInt(request.params.step_major, 10),
             step_minor: parseInt(request.params.step_minor, 10),
-            hash: request.params.image_hash
+            hash: request.params.image_hash,
+            location: filepath,
+            key: request.file.key
         }
     }).then(() => {
         response.status(201).json({sucess: true, filepath});
@@ -111,4 +87,4 @@ function addImagePath (request, response, next) {
     });
 }
 
-export {imageUpload, getImage, getImageById, addImagePath};
+export {imageUpload, getImageById, addImagePath};

@@ -14,6 +14,8 @@ model images {
   step_minor Int?
   hash       String? @db.VarChar(100)
   filetype   String? @db.VarChar(40)
+  location   String?
+  key        String? @db.VarChar(100)
 }
 
 model steps {

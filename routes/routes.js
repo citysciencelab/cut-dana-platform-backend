@@ -14,7 +14,6 @@ router.get("/image/:image_hash", images_controller.getImageById);
 router.get("/step/:story_id", steps_controller.getStepsByStoryId);
 router.get("/step/:story_id/:step_major/:step_minor/html", steps_controller.getHtml);
 router.get("/step/:story_id/:step_major/:step_minor", steps_controller.getStoryStep);
-router.get("/step/:story_id/:step_major/:step_minor/image", images_controller.getImage);
 
 
 // POST
