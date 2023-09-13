@@ -1,10 +1,15 @@
+import "dotenv/config";
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import logger from "morgan";
 import createError from "http-errors";
+import {connect} from "mongoose";
 
 import routes from "./routes/routes.js";
+
+// eslint-disable-next-line no-process-env
+connect(process.env.MONGODB_URI);
 
 const app = express();
 
@@ -17,16 +22,11 @@ app.use("/", routes);
 
 // catch 404 and forward to error handler
 app.use((request, response, next) => {
-    next(createError(404, "Path not Found"));
+    next(createError(404, "Path not found"));
 });
 
 // error handler
 app.use((error, request, response, next) => {
-    // Prisma Client can't find a record with the specified unique key
-    if (error.code === "P2025") {
-        error.status = 404;
-    }
-
     const details = {error: error.message};
 
     switch (error.status) {

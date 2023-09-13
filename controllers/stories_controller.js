@@ -1,5 +1,24 @@
-import {PrismaClient} from "@prisma/client";
-const prisma = new PrismaClient();
+import createError from "http-errors";
+import {Story} from "../models/story.js";
+import {Image, deleteImagesFromS3} from "../models/image.js";
+
+
+/**
+ * description
+ *
+ * @param {Object} request description
+ * @param {Number} response description
+ * @param {function} next description
+ * @returns {void}
+ */
+function create (request, response, next) {
+    // Strict schema prevents from saving unvanted data
+    Story.create(request.body).then((newStory) => {
+        response.status(201).json({success: true, storyID: newStory._id});
+    }).catch((err) => {
+        next(err);
+    });
+}
 
 
 // GET
@@ -13,16 +32,7 @@ const prisma = new PrismaClient();
  * @returns {void}
  */
 function getStories (request, response, next) {
-    prisma.stories.findMany({
-        select: {
-            id: true,
-            title: true,
-            author: true,
-            description: true,
-            category: true,
-            title_image: true
-        }
-    }).then((stories) => {
+    Story.find({ }, "_id title author description titleImage").exec().then((stories) => {
         response.json(stories);
     }).catch((err) => {
         next(err);
@@ -38,20 +48,21 @@ function getStories (request, response, next) {
  * @returns {void}
  */
 function getStoriesForDipas (request, response, next) {
-    prisma.stories.findMany({
-        select: {
-            id: true,
-            title: true,
-            author: true,
-            description: true,
-            category: true
-        }
-    }).then((stories) => {
+    Story.find({ }, "_id title author description titleImage").exec().then((stories) => {
         const result = {
             baseURL: "data.storybaseurl",
             proceedingname: "data.proceedingname",
             proceedingurl: "data.proceedingurl",
-            stories: stories
+            stories: stories.map((story) => {
+                return {
+                    id: story._id,
+                    title: story.title,
+                    author: story.author,
+                    category: story.author,
+                    description: story.description,
+                    title_image: story.title_image
+                };
+            })
         };
 
         response.json(result);
@@ -69,18 +80,13 @@ function getStoriesForDipas (request, response, next) {
  * @returns {void}
  */
 function getStoryStructure (request, response, next) {
-    prisma.stories.findUniqueOrThrow({
-        where: {
-            id: parseInt(request.params.story_id, 10)
-        },
-        select: {
-            story_json: true
-        }
-    }).then((story) => {
-        response.json(story.story_json);
-    }).catch((err) => {
-        next(err);
-    });
+    Story.findById(request.params.story_id)
+        .orFail(createError(404, "Story not found")).exec()
+        .then((story) => {
+            response.json(story);
+        }).catch((err) => {
+            next(err);
+        });
 }
 
 
@@ -93,47 +99,16 @@ function getStoryStructure (request, response, next) {
  * @returns {void}
  */
 function getStoriesAllData (request, response, next) {
-    prisma.stories.findMany().then((stories) => {
+    Story.find({ }).exec().then((stories) => {
         response.json(stories);
     }).catch((err) => {
         next(err);
     });
 }
 
-// POST/PUT
-
 /**
- * description
- *
- * @param {Object} request description
- * @param {Number} response description
- * @param {function} next description
- * @returns {void}
- */
-function createStory (request, response, next) {
-    prisma.stories.create({
-        data: {
-            title: request.body.story_json.title,
-            story_interval: parseInt(request.body.story_interval, 10),
-            category: null,
-            story_json: request.body.story_json,
-            author: request.body.author,
-            description: request.body.description,
-            title_image: request.body.title_image,
-            display_type: request.body.display_type
-        }
-    }).then((newStory) => {
-        response.status(201).json({success: true, storyID: newStory.id});
-    }).catch((err) => {
-        next(err);
-    });
-}
-
-
-// DELETE
-
-/**
- * description
+ * Removes story from database and all images from S3
+ * TODO: keep all images in the same document (Story)
  *
  * @param {Object} request description
  * @param {Number} response description
@@ -141,23 +116,22 @@ function createStory (request, response, next) {
  * @returns {void}
  */
 function deleteStory (request, response, next) {
-    const deleteSteps = prisma.steps.deleteMany({
-            where: {
-                story_id: parseInt(request.params.story_id, 10)
+    Story.deleteOne({_id: request.params.story_id}).then(() => {
+        Image.find({story_id: request.params.story_id}).then((images) => {
+            if (images.length === 0) {
+                response.status(201).send("story deleted");
             }
-        }),
-        deleteSelf = prisma.stories.delete({
-            where: {
-                id: parseInt(request.params.story_id, 10)
+            else {
+                deleteImagesFromS3(images).then(() => {
+                    Image.deleteMany({story_id: request.params.story_id}).then(() => {
+                        response.status(201).send("story deleted");
+                    });
+                });
             }
         });
-
-    prisma.$transaction([deleteSteps, deleteSelf]).then(() => {
-        response.status(201).send("story deleted");
     }).catch((err) => {
         next(err);
     });
-    // TODO: delete all images associated with story
 }
 
-export {getStories, getStoryStructure, createStory, deleteStory, getStoriesAllData, getStoriesForDipas};
+export {getStories, getStoryStructure, create, deleteStory, getStoriesAllData, getStoriesForDipas};
