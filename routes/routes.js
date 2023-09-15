@@ -7,6 +7,7 @@ const router = new Router();
 
 
 // GET
+router.get("/s/:story_id/:step_index", stories_controller.redirectToStep);
 router.get("/story", stories_controller.getStories);
 router.get("/dipastoryselector", stories_controller.getStoriesForDipas);
 router.get("/story/:story_id", stories_controller.getStoryStructure);

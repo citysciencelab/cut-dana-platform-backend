@@ -2,6 +2,19 @@ import createError from "http-errors";
 import {Story} from "../models/story.js";
 import {Image, deleteImagesFromS3} from "../models/image.js";
 
+/**
+ * description
+ *
+ * @param {Object} request description
+ * @param {Number} response description
+ * @param {function} next description
+ * @returns {void}
+ */
+function redirectToStep (request, response, next) {
+    // eslint-disable-next-line no-process-env
+    response.status(301).redirect(`${process.env.FRONTEND_URI}?story=${request.params.story_id}&step=${request.params.step_index}`);
+}
+
 
 /**
  * description
@@ -60,7 +73,7 @@ function getStoriesForDipas (request, response, next) {
                     author: story.author,
                     category: story.author,
                     description: story.description,
-                    title_image: story.title_image
+                    title_image: story.titleImage
                 };
             })
         };
@@ -134,4 +147,4 @@ function deleteStory (request, response, next) {
     });
 }
 
-export {getStories, getStoryStructure, create, deleteStory, getStoriesAllData, getStoriesForDipas};
+export {getStories, getStoryStructure, create, deleteStory, getStoriesAllData, getStoriesForDipas, redirectToStep};
