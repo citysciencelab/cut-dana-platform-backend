@@ -83,7 +83,7 @@ storySchema.pre("save", function (next) {
     this.title = stripHtml(this.title).result.trim();
     this.description = stripHtml(this.description).result.trim();
     this.author = stripHtml(this.author).result.trim();
-    this.displayType = stripHtml(this.displayType).result.trim();
+    this.displayType = stripHtml(this.displayType || "classic").result.trim();
     this.chapters = this.chapters.map((chapter) => {
         chapter.chapterTitle = stripHtml(chapter.chapterTitle).result.trim();
         return chapter;
