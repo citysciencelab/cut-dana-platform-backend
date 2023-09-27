@@ -1,30 +1,15 @@
-// TODO: remove this model completely
-import {model, Schema, ObjectId} from "mongoose";
+import {Schema} from "mongoose";
 import {S3Client, DeleteObjectsCommand} from "@aws-sdk/client-s3";
 
 /* eslint-disable no-process-env */
 
 const imageSchema = new Schema({
         key: String,
-        hash: {
-            type: String,
-            index: true
-        },
+        hash: String,
         location: String,
-        storyId: {
-            type: ObjectId,
-            index: true
-        },
-        stepMajor: {
-            type: Number,
-            index: true
-        },
-        stepMinor: {
-            type: Number,
-            index: true
-        }}),
-
-    Image = model("Image", imageSchema),
+        associatedChapter: Number,
+        stepNumber: Number
+    }),
     s3client = new S3Client({
         secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
         accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
@@ -51,4 +36,4 @@ function deleteImagesFromS3 (images) {
 
 /* eslint-enable no-process-env */
 
-export {Image, imageSchema, s3client, deleteImagesFromS3};
+export {imageSchema, s3client, deleteImagesFromS3};

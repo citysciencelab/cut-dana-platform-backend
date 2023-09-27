@@ -31,7 +31,8 @@ app.use((error, request, response, next) => {
 
     switch (error.status) {
         case 404:
-            response.status(404).json(details);
+        case 400:
+            response.status(error.status).json(details);
             break;
         default:
             if (request.app.get("env") === "development") {

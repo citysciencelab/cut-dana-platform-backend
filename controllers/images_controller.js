@@ -2,7 +2,10 @@ import mime from "mime-types";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import createError from "http-errors";
-import {Image, s3client} from "../models/image.js";
+import {parse} from "node-html-parser";
+
+import {Story} from "../models/story.js";
+import {s3client, deleteImagesFromS3} from "../models/image.js";
 
 /* eslint-disable no-process-env */
 
@@ -27,29 +30,9 @@ const imageUpload = multer({
     })
 });
 
-/* eslint-enable no-process-env */
 
 /**
- * Retrieves image by id from database
- *
- * @param {Object} request description
- * @param {Number} response description
- * @param {function} next description
- * @returns {void}
- */
-function getImageById (request, response, next) {
-    Image.findOne({hash: request.params.image_hash}, "location")
-        .orFail(createError(404, "Image not found")).exec()
-        .then((image) => {
-            response.status(301).redirect(image.location);
-        }).catch((err) => {
-            next(err);
-        });
-}
-
-
-/**
- * description
+ * Add uploaded image to story
  *
  * @param {Object} request description
  * @param {Number} response description
@@ -57,20 +40,111 @@ function getImageById (request, response, next) {
  * @returns {void}
  */
 function addImagePath (request, response, next) {
-    const filepath = request.file.location;
+    const fileMeta = fileMetaInfo(request),
+        overwrites = {};
 
-    Image.create({
-        story_id: request.params.story_id,
-        step_major: request.params.step_major,
-        step_minor: request.params.step_minor,
-        hash: request.params.image_hash,
-        location: filepath,
-        key: request.file.key
-    }).then(() => {
-        response.status(201).json({sucess: true, filepath});
-    }).catch((err) => {
-        next(err);
-    });
+
+    Story.findById(request.params.story_id)
+        .orFail(createError(404, "Story not found")).exec()
+        .then((story) => {
+            if (fileMeta.associatedChapter === 0 && fileMeta.stepNumber === 0) {
+                // this is the story cover image
+                overwrites.images = saveCoverImage(story, fileMeta);
+                overwrites.titleImage = fileMeta.location;
+            }
+            else {
+                // this is a step image
+                const [stepFound, newSteps] = saveStepImage(story, fileMeta);
+
+                if (!stepFound) {
+                    throw createError(404, "Step not found");
+                }
+                overwrites.images = story.images;
+                overwrites.steps = newSteps;
+            }
+
+            if (Object.keys(overwrites).length === 0) {
+                throw createError(400, "Something went wrong");
+            }
+            story.set(overwrites).save();
+            response.status(201).json({sucess: true, filepath: fileMeta.location});
+        }).catch((err) => {
+            next(err);
+        });
 }
 
-export {imageUpload, getImageById, addImagePath};
+/**
+ * Extract and prepare image metadata
+ * @param {Object} request passed from top-level function
+ * @returns {Object} extracted file metadata
+ */
+function fileMetaInfo (request) {
+    return {
+        associatedChapter: parseInt(request.params.step_major, 10),
+        stepNumber: parseInt(request.params.step_minor, 10),
+        hash: request.params.image_hash,
+        location: request.file.location,
+        key: request.file.key
+    };
+}
+
+
+/**
+ * Add uploaded image to story
+ * @param {Object} story processed story object
+ * @param {Object} fileMeta extracted file metadata
+ * @returns {Array} [stepFound, newSteps]
+*/
+function saveStepImage (story, fileMeta) {
+    let stepFound = false;
+    // replace the image link in the step html
+    const newSteps = story.steps.map((step) => {
+        if (step.associatedChapter === fileMeta.associatedChapter && step.stepNumber === fileMeta.stepNumber) {
+            stepFound = true;
+
+            // add this image into the story.images array
+            story.images.push(fileMeta);
+
+            const root = parse(step.html);
+
+            root.getElementsByTagName("img").forEach((img) => {
+                const src = img.getAttribute("src");
+
+                if (src === fileMeta.hash) {
+                    img.setAttribute("id", img.getAttribute("src"));
+                    img.setAttribute("src", fileMeta.location);
+                }
+            });
+            step.html = root.toString();
+        }
+        return step;
+    });
+
+    return [stepFound, newSteps];
+}
+
+/**
+ * Add uploaded image to story
+ * @param {Object} story processed story object
+ * @param {Object} fileMeta extracted file metadata
+ * @returns {Array} [newImages]
+*/
+function saveCoverImage (story, fileMeta) {
+    let imageFound = false;
+    const newImages = story.images.map((image) => {
+        if (image.associatedChapter === 0 && image.stepNumber === 0) {
+            deleteImagesFromS3([image]);
+            imageFound = true;
+            return fileMeta;
+        }
+        return image;
+    });
+
+    if (!imageFound) {
+        newImages.push(fileMeta);
+    }
+
+    return newImages;
+}
+
+export {imageUpload, addImagePath};
