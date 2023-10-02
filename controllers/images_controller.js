@@ -2,10 +2,9 @@ import mime from "mime-types";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import createError from "http-errors";
-import {parse} from "node-html-parser";
 
 import {Story} from "../models/story.js";
-import {s3client, deleteImagesFromS3} from "../models/image.js";
+import {s3client} from "../models/image.js";
 
 /* eslint-disable no-process-env */
 
@@ -40,34 +39,26 @@ const imageUpload = multer({
  * @returns {void}
  */
 function addImagePath (request, response, next) {
-    const fileMeta = fileMetaInfo(request),
-        overwrites = {};
-
-
     Story.findById(request.params.story_id)
-        .orFail(createError(404, "Story not found")).exec()
+        .orFail(createError(404, "Story not found"))
         .then((story) => {
-            if (fileMeta.associatedChapter === 0 && fileMeta.stepNumber === 0) {
-                // this is the story cover image
-                overwrites.images = saveCoverImage(story, fileMeta);
-                overwrites.titleImage = fileMeta.location;
-            }
-            else {
-                // this is a step image
-                const [stepFound, newSteps] = saveStepImage(story, fileMeta);
+            const fileMeta = fileMetaInfo(request),
+                operations = {
+                    $push: {images: fileMeta}
+                };
 
-                if (!stepFound) {
-                    throw createError(404, "Step not found");
+            if (fileMeta.titleImage) {
+                const oldTitleImage = story.checkTitleImage(fileMeta.location)[1];
+
+                if (oldTitleImage) {
+                    operations.$pull = {images: {hash: oldTitleImage.hash}};
                 }
-                overwrites.images = story.images;
-                overwrites.steps = newSteps;
+                operations.$set = {titleImage: fileMeta.location};
             }
 
-            if (Object.keys(overwrites).length === 0) {
-                throw createError(400, "Something went wrong");
-            }
-            story.set(overwrites).save();
-            response.status(201).json({sucess: true, filepath: fileMeta.location});
+            return Story.findOneAndUpdate({"_id": story.id}, operations).then(() => {
+                response.status(201).json({sucess: true, filepath: fileMeta.location});
+            });
         }).catch((err) => {
             next(err);
         });
@@ -80,71 +71,11 @@ function addImagePath (request, response, next) {
  */
 function fileMetaInfo (request) {
     return {
-        associatedChapter: parseInt(request.params.step_major, 10),
-        stepNumber: parseInt(request.params.step_minor, 10),
+        titleImage: parseInt(request.params.step_major, 10) === 0 && parseInt(request.params.step_minor, 10) === 0,
         hash: request.params.image_hash,
         location: request.file.location,
         key: request.file.key
     };
-}
-
-
-/**
- * Add uploaded image to story
- * @param {Object} story processed story object
- * @param {Object} fileMeta extracted file metadata
- * @returns {Array} [stepFound, newSteps]
-*/
-function saveStepImage (story, fileMeta) {
-    let stepFound = false;
-    // replace the image link in the step html
-    const newSteps = story.steps.map((step) => {
-        if (step.associatedChapter === fileMeta.associatedChapter && step.stepNumber === fileMeta.stepNumber) {
-            stepFound = true;
-
-            // add this image into the story.images array
-            story.images.push(fileMeta);
-
-            const root = parse(step.html);
-
-            root.getElementsByTagName("img").forEach((img) => {
-                const src = img.getAttribute("src");
-
-                if (src === fileMeta.hash) {
-                    img.setAttribute("id", img.getAttribute("src"));
-                    img.setAttribute("src", fileMeta.location);
-                }
-            });
-            step.html = root.toString();
-        }
-        return step;
-    });
-
-    return [stepFound, newSteps];
-}
-
-/**
- * Add uploaded image to story
- * @param {Object} story processed story object
- * @param {Object} fileMeta extracted file metadata
- * @returns {Array} [newImages]
-*/
-function saveCoverImage (story, fileMeta) {
-    let imageFound = false;
-    const newImages = story.images.map((image) => {
-        if (image.associatedChapter === 0 && image.stepNumber === 0) {
-            deleteImagesFromS3([image]);
-            imageFound = true;
-            return fileMeta;
-        }
-        return image;
-    });
-
-    if (!imageFound) {
-        newImages.push(fileMeta);
-    }
-
-    return newImages;
 }
 
 export {imageUpload, addImagePath};

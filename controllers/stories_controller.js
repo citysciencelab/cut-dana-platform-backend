@@ -1,4 +1,5 @@
 import createError from "http-errors";
+
 import {Story} from "../models/story.js";
 import {deleteImagesFromS3} from "../models/image.js";
 
@@ -49,39 +50,51 @@ function update (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            const usedImages = [],
-                usedImageIds = [],
-                savedImages = story.images;
-
-            // Remove title image if it has been changed
-            story.checkTitleImage(newStory, usedImages, usedImageIds);
-
-            // each step in newStory should be sanitized and used images should be added to usedImages
-            // eslint-disable-next-line one-var
-            const newSteps = story.prepareSteps(newStory, usedImages, usedImageIds);
-
-            // delete unused images
-            // eslint-disable-next-line one-var
-            const unusedImages = savedImages.filter((image) => !usedImageIds.includes(image.hash));
-
-            if (unusedImages.length > 0) {
-                deleteImagesFromS3(unusedImages);
-            }
-
             // update story
             return story.set({
-                titleImage: newStory.titleImage,
+                titleImage: story.checkTitleImage(newStory.titleImage)[0],
                 title: newStory.title,
                 author: newStory.author,
                 description: newStory.description,
                 storyInterval: newStory.storyInterval,
                 chapters: newStory.chapters,
                 displayType: newStory.displayType,
-                steps: newSteps,
-                images: usedImages
+                steps: newStory.steps
             }).save();
         }).then(() => {
             response.status(200).json({success: true, storyID: request.params.story_id});
+        }).catch((err) => {
+            next(err);
+        });
+}
+
+/**
+ * Update step HTML with prepared image
+ * @param {Object} request description
+ * @param {Object} response description
+ * @param {function} next description
+ * @returns {void}
+ */
+function updateHtml (request, response, next) {
+    Story.findById(request.params.story_id)
+        .orFail(createError(404, "Story not found")).exec()
+        .then((story) => {
+            const html = story.prepareHtml(request.body.html);
+
+            Story.findOneAndUpdate(
+                {
+                    "_id": story.id,
+                    "steps.associatedChapter": parseInt(request.params.step_major, 10),
+                    "steps.stepNumber": parseInt(request.params.step_minor, 10)
+                },
+                {
+                    "$set": {
+                        "steps.$.html": html
+                    }
+                }
+            ).then(() => {
+                response.status(200).json({success: true});
+            });
         }).catch((err) => {
             next(err);
         });
@@ -189,5 +202,6 @@ export {
     update,
     remove,
     getStoriesForDipas,
-    redirectToStep
+    redirectToStep,
+    updateHtml
 };

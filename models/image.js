@@ -7,8 +7,11 @@ const imageSchema = new Schema({
         key: String,
         hash: String,
         location: String,
-        associatedChapter: Number,
-        stepNumber: Number
+        titleImage: {
+            type: Boolean,
+            index: true,
+            default: false
+        }
     }),
     s3client = new S3Client({
         secretAccessKey: process.env.AWS_ACCESS_KEY_ID,

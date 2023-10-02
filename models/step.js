@@ -3,10 +3,16 @@ import sanitizeHtml from "sanitize-html";
 import {stripHtml} from "string-strip-html";
 
 export const stepSchema = new Schema({
-    stepNumber: Number,
+    stepNumber: {
+        type: Number,
+        index: true
+    },
+    associatedChapter: {
+        type: Number,
+        index: true
+    },
     stepWidth: Number,
     visible: Boolean,
-    associatedChapter: Number,
     title: String,
     html: String,
     centerCoordinate: [Number],
@@ -22,7 +28,7 @@ export const stepSchema = new Schema({
 });
 
 // eslint-disable-next-line one-var
-const sanitizeOptions = {
+export const sanitizeOptions = {
     allowedTags: ["b", "i", "em", "strong", "a", "img", "p", "br", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6",
         "blockquote", "code", "span"],
     allowedAttributes: {

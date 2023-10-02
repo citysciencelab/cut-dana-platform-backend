@@ -1,8 +1,9 @@
 import {model, Schema} from "mongoose";
 import {parse} from "node-html-parser";
 import {stripHtml} from "string-strip-html";
+import sanitizeHtml from "sanitize-html";
 
-import {stepSchema} from "./step.js";
+import {stepSchema, sanitizeOptions} from "./step.js";
 import {imageSchema, deleteImagesFromS3} from "./image.js";
 
 const storySchema = new Schema({
@@ -33,47 +34,32 @@ const storySchema = new Schema({
 }, {
     timestamps: true,
     methods: {
-        checkTitleImage (newStory, usedImages, usedImageIds) {
-            this.images.every((image) => {
-                if (image.associatedChapter === 0 && image.stepNumber === 0) {
-                    if (this.titleImage && newStory.titleImage !== this.titleImage) {
-                        newStory.titleImage = "";
-                        deleteImagesFromS3([image]);
-                    }
-                    else {
-                        newStory.titleImage = this.titleImage;
-                        usedImageIds.push(image.hash);
-                        usedImages.push(image);
-                    }
-                    return false;
-                }
-                return true;
-            });
+        checkTitleImage (newTitleImage) {
+            const oldTitleImage = this.images.find((image) => image.titleImage);
+
+            if (oldTitleImage && newTitleImage !== oldTitleImage.location) {
+                deleteImagesFromS3([oldTitleImage]);
+                return "";
+            }
+            return [newTitleImage, oldTitleImage];
+
         },
-        prepareSteps (newStory, usedImages, usedImageIds) {
-            return newStory.steps.map((step) => {
-                const newStep = {...step},
-                    root = parse(newStep.html);
+        prepareHtml (html) {
+            const root = parse(sanitizeHtml(html, sanitizeOptions));
 
-                root.getElementsByTagName("img").forEach((img) => {
-                    const imgId = img.getAttribute("id") || img.getAttribute("src");
+            root.getElementsByTagName("img").forEach((img) => {
+                const imgId = img.getAttribute("id") || img.getAttribute("src");
 
-                    if (imgId) {
-                        const image = this.images.find((candidate) => {
-                            return candidate.hash === imgId;
-                        });
+                if (imgId) {
+                    const image = this.images.find((candidate) => candidate.hash === imgId);
 
-                        if (image) {
-                            image.associatedChapter = newStep.associatedChapter;
-                            image.stepNumber = newStep.stepNumber;
-                            usedImages.push(image);
-                            usedImageIds.push(image.hash);
-                        }
+                    if (image) {
+                        img.setAttribute("id", img.getAttribute("src"));
+                        img.setAttribute("src", image.location);
                     }
-                });
-                newStep.html = root.toString();
-                return newStep;
+                }
             });
+            return root.toString();
         }
     }
 });

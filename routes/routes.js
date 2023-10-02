@@ -26,6 +26,10 @@ router.post("/images/:story_id/:step_major/:step_minor/:image_hash",
 );
 
 // PATCH
+router.patch("/stories/:story_id/:step_major/:step_minor/html",
+    mongoSanitize(),
+    stories_controller.updateHtml
+);
 router.patch("/stories/:story_id",
     mongoSanitize(),
     stories_controller.update
