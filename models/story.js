@@ -30,7 +30,20 @@ const storySchema = new Schema({
     publishedAt: {
         type: Date,
         required: false
-    }
+    },
+    owner: {
+        type: String,
+        index: true
+    },
+    private: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
+    sharedWith: [{
+        type: String,
+        index: true
+    }]
 }, {
     timestamps: true,
     methods: {
@@ -65,7 +78,6 @@ const storySchema = new Schema({
 });
 
 storySchema.pre("save", function (next) {
-    // console.log(stripHtml(this.title).result.trim());
     this.title = stripHtml(this.title).result.trim();
     this.description = stripHtml(this.description).result.trim();
     this.author = stripHtml(this.author).result.trim();
@@ -74,6 +86,7 @@ storySchema.pre("save", function (next) {
         chapter.chapterTitle = stripHtml(chapter.chapterTitle).result.trim();
         return chapter;
     });
+    this.sharedWith = this.sharedWith.map((e) => stripHtml(e).result.trim().toLowerCase());
     next();
 });
 
