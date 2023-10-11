@@ -42,6 +42,9 @@ function addImagePath (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found"))
         .then((story) => {
+            if (story.owner !== request.user?.sub) {
+                throw createError(403, "Forbidden");
+            }
             const fileMeta = fileMetaInfo(request),
                 operations = {
                     $push: {images: fileMeta}

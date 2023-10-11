@@ -2,6 +2,8 @@ import createError from "http-errors";
 
 import {Story} from "../models/story.js";
 import {deleteImagesFromS3} from "../models/image.js";
+import {queryBuilder} from "../utils/queryBuilder.js";
+import {orderBuilder} from "../utils/orderBuilder.js";
 
 
 /**
@@ -28,8 +30,12 @@ function redirectToStep (request, response) {
  */
 function create (request, response, next) {
     // Strict schema prevents from saving unvanted data
-    Story.create(request.body).then((newStory) => {
-        response.status(201).json({success: true, storyId: newStory._id});
+    const newStory = request.body;
+
+    newStory.author = newStory.author || request.user?.name || "anonymous";
+    newStory.owner = request.user?.sub || "anonymous";
+    Story.create(newStory).then((story) => {
+        response.status(201).json({success: true, storyId: story._id});
     }).catch((err) => {
         next(err);
     });
@@ -45,21 +51,27 @@ function create (request, response, next) {
  * @returns {void}
  */
 function update (request, response, next) {
-    const newStory = request.body;
+    const newStory = request.body,
+        author = newStory.author || request.user?.name || "anonymous";
 
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
+            if (story.owner !== request.user?.sub) {
+                throw createError(403, "Forbidden");
+            }
             // update story
             return story.set({
                 titleImage: story.checkTitleImage(newStory.titleImage)[0],
                 title: newStory.title,
-                author: newStory.author,
+                author: author,
                 description: newStory.description,
                 storyInterval: newStory.storyInterval,
                 chapters: newStory.chapters,
                 displayType: newStory.displayType,
-                steps: newStory.steps
+                steps: newStory.steps,
+                private: newStory.private,
+                sharedWith: newStory.sharedWith
             }).save();
         }).then(() => {
             response.status(200).json({success: true, storyID: request.params.story_id});
@@ -79,6 +91,9 @@ function updateHtml (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
+            if (story.owner !== request.user?.sub) {
+                throw createError(403, "Forbidden");
+            }
             const html = story.prepareHtml(request.body.html);
 
             Story.findOneAndUpdate(
@@ -112,11 +127,14 @@ function updateHtml (request, response, next) {
  * @returns {void}
  */
 function index (request, response, next) {
-    Story.find({ }, "_id title author description titleImage").exec().then((stories) => {
-        response.json(stories);
-    }).catch((err) => {
-        next(err);
-    });
+    Story.find(queryBuilder(request), "_id title author description titleImage")
+        .sort(orderBuilder(request))
+        .exec()
+        .then((stories) => {
+            response.json(stories);
+        }).catch((err) => {
+            next(err);
+        });
 }
 
 /**
@@ -128,27 +146,30 @@ function index (request, response, next) {
  * @returns {void}
  */
 function getStoriesForDipas (request, response, next) {
-    Story.find({ }, "_id title author description titleImage").exec().then((stories) => {
-        const result = {
-            baseURL: "data.storybaseurl",
-            proceedingname: "data.proceedingname",
-            proceedingurl: "data.proceedingurl",
-            stories: stories.map((story) => {
-                return {
-                    id: story._id,
-                    title: story.title,
-                    author: story.author,
-                    category: story.author,
-                    description: story.description,
-                    title_image: story.titleImage
-                };
-            })
-        };
+    Story.find(queryBuilder(request), "_id title author description titleImage")
+        .sort(orderBuilder(request))
+        .exec()
+        .then((stories) => {
+            const result = {
+                baseURL: "data.storybaseurl",
+                proceedingname: "data.proceedingname",
+                proceedingurl: "data.proceedingurl",
+                stories: stories.map((story) => {
+                    return {
+                        id: story._id,
+                        title: story.title,
+                        author: story.author,
+                        category: story.author,
+                        description: story.description,
+                        title_image: story.titleImage
+                    };
+                })
+            };
 
-        response.json(result);
-    }).catch((err) => {
-        next(err);
-    });
+            response.json(result);
+        }).catch((err) => {
+            next(err);
+        });
 }
 
 /**
@@ -163,6 +184,11 @@ function show (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
+            if (story.private && (!request.user ||
+                    (story.owner !== request.user?.sub && !story.sharedWith.includes(request.user?.email))
+            )) {
+                throw createError(403, "Forbidden");
+            }
             response.json(story);
         }).catch((err) => {
             next(err);
@@ -183,6 +209,9 @@ function remove (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
+            if (story.owner !== request.user?.sub) {
+                throw createError(403, "Forbidden");
+            }
             if (story.images.length > 0) {
                 deleteImagesFromS3(story.images);
             }

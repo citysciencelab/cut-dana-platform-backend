@@ -7,6 +7,8 @@ import createError from "http-errors";
 import {connect} from "mongoose";
 
 import routes from "./routes/routes.js";
+import {authMiddleware} from "./utils/authMiddleware.js";
+import {errorHandlerMiddleware} from "./utils/errorHandlerMiddleware.js";
 
 // eslint-disable-next-line no-process-env
 connect(process.env.MONGODB_URI);
@@ -18,6 +20,9 @@ app.use(cors({origin: "*"}));
 app.use(express.json({limit: "25mb"}));
 app.use(bodyParser.json());
 
+// Extract user info from token (if present)
+app.use(authMiddleware);
+
 app.use("/", routes);
 
 // catch 404 and forward to error handler
@@ -26,21 +31,6 @@ app.use((request, response, next) => {
 });
 
 // error handler
-app.use((error, request, response, next) => {
-    const details = {error: error.message};
-
-    switch (error.status) {
-        case 404:
-        case 400:
-            response.status(error.status).json(details);
-            break;
-        default:
-            if (request.app.get("env") === "development") {
-                details.stack = error.stack;
-            }
-            response.status(error.status || 500).json(details);
-    }
-    next(error);
-});
+app.use(errorHandlerMiddleware);
 
 app.listen(3000);
