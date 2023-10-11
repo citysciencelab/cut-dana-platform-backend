@@ -127,11 +127,22 @@ function updateHtml (request, response, next) {
  * @returns {void}
  */
 function index (request, response, next) {
-    Story.find(queryBuilder(request), "_id title author description titleImage")
+    Story.find(queryBuilder(request), "_id title author description titleImage owner")
         .sort(orderBuilder(request))
         .exec()
         .then((stories) => {
-            response.json(stories);
+            const preparedStories = stories.map((story) => {
+                return {
+                    _id: story._id,
+                    title: story.title,
+                    author: story.author,
+                    description: story.description,
+                    titleImage: story.titleImage,
+                    editable: story.owner === request.user?.sub
+                };
+            });
+
+            response.json(preparedStories);
         }).catch((err) => {
             next(err);
         });
