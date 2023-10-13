@@ -43,7 +43,12 @@ const storySchema = new Schema({
     sharedWith: [{
         type: String,
         index: true
-    }]
+    }],
+    featured: {
+        type: Boolean,
+        default: false,
+        index: true
+    }
 }, {
     timestamps: true,
     methods: {

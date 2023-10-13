@@ -6,6 +6,9 @@
  * @returns {Object} MongoDB query
  */
 function defaultQuery (request) {
+    if (request.isAdmin) {
+        return {};
+    }
     return {
         $or: [
             {private: false},
@@ -24,6 +27,9 @@ function defaultQuery (request) {
 export function queryBuilder (request) {
     if (request.query.mode === "my") {
         return {owner: request.user?.sub};
+    }
+    else if (request.query.mode === "featured") {
+        return {"$and": [{"featured": true}, defaultQuery(request)]};
     }
     return defaultQuery(request);
 }

@@ -22,7 +22,10 @@ export function authMiddleware (request, response, next) {
                 }).join("")),
                 payload = JSON.parse(jsonPayload);
 
-            // console.log("payload", payload);
+            // console.log("payload", payload); // .resource_access.account.roles);
+            if (payload.realm_access.roles.includes("admin")) {
+                request.isAdmin = true;
+            }
 
             request.user = payload;
         }

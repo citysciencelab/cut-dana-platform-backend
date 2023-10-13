@@ -30,6 +30,9 @@ router.patch("/stories/:story_id/:step_major/:step_minor/html",
     mongoSanitize(),
     stories_controller.updateHtml
 );
+router.patch("/stories/:story_id/featured",
+    stories_controller.featured
+);
 router.patch("/stories/:story_id",
     mongoSanitize(),
     stories_controller.update

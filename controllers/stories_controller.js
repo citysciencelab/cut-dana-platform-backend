@@ -57,7 +57,7 @@ function update (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            if (story.owner !== request.user?.sub) {
+            if (story.owner !== request.user?.sub && request.isAdmin === false) {
                 throw createError(403, "Forbidden");
             }
             // update story
@@ -87,11 +87,37 @@ function update (request, response, next) {
  * @param {function} next description
  * @returns {void}
  */
+function featured (request, response, next) {
+    if (request.isAdmin === false) {
+        throw createError(403, "Forbidden");
+    }
+    Story.findById(request.params.story_id)
+        .orFail(createError(404, "Story not found")).exec()
+        .then((story) => {
+            story.featured = !story.featured;
+            Story.findOneAndUpdate(
+                {"_id": story.id},
+                {"$set": {featured: story.featured}}
+            ).then(() => {
+                response.status(200).json({success: true});
+            });
+        }).catch((err) => {
+            next(err);
+        });
+}
+
+/**
+ * Update step HTML with prepared image
+ * @param {Object} request description
+ * @param {Object} response description
+ * @param {function} next description
+ * @returns {void}
+ */
 function updateHtml (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            if (story.owner !== request.user?.sub) {
+            if (story.owner !== request.user?.sub && request.isAdmin === false) {
                 throw createError(403, "Forbidden");
             }
             const html = story.prepareHtml(request.body.html);
@@ -127,7 +153,7 @@ function updateHtml (request, response, next) {
  * @returns {void}
  */
 function index (request, response, next) {
-    Story.find(queryBuilder(request), "_id title author description titleImage")
+    Story.find(queryBuilder(request), "_id title author description titleImage owner featured")
         .sort(orderBuilder(request))
         .exec()
         .then((stories) => {
@@ -185,7 +211,10 @@ function show (request, response, next) {
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
             if (story.private && (!request.user ||
-                    (story.owner !== request.user?.sub && !story.sharedWith.includes(request.user?.email))
+                    (request.isAdmin === false &&
+                     story.owner !== request.user?.sub &&
+                     !story.sharedWith.includes(request.user?.email)
+                    )
             )) {
                 throw createError(403, "Forbidden");
             }
@@ -209,7 +238,7 @@ function remove (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            if (story.owner !== request.user?.sub) {
+            if (story.owner !== request.user?.sub && request.isAdmin === false) {
                 throw createError(403, "Forbidden");
             }
             if (story.images.length > 0) {
@@ -232,5 +261,6 @@ export {
     remove,
     getStoriesForDipas,
     redirectToStep,
-    updateHtml
+    updateHtml,
+    featured
 };
