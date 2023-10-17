@@ -1,4 +1,5 @@
 import createError from "http-errors";
+import {stripHtml} from "string-strip-html";
 
 import {Story} from "../models/story.js";
 import {deleteImagesFromS3} from "../models/image.js";
@@ -7,11 +8,10 @@ import {orderBuilder} from "../utils/orderBuilder.js";
 
 
 /**
- * description
+ * Redirect to frontend
  *
- * @param {Object} request description
- * @param {Number} response description
- * @param {function} next description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @returns {void}
  */
 function redirectToStep (request, response) {
@@ -21,10 +21,10 @@ function redirectToStep (request, response) {
 
 
 /**
- * description
+ * Create story
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -43,10 +43,10 @@ function create (request, response, next) {
 
 
 /**
- * description
+ * Update story
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -81,9 +81,9 @@ function update (request, response, next) {
 }
 
 /**
- * Update step HTML with prepared image
- * @param {Object} request description
- * @param {Object} response description
+ * Toggle featured status of story
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -106,10 +106,42 @@ function featured (request, response, next) {
         });
 }
 
+
+/**
+ * Update story privacy settings
+ * @param {Object} request http request
+ * @param {Object} response http response
+ * @param {function} next description
+ * @returns {void}
+ */
+function privacy (request, response, next) {
+    if (request.isAdmin === false) {
+        throw createError(403, "Forbidden");
+    }
+    Story.findById(request.params.story_id)
+        .orFail(createError(404, "Story not found")).exec()
+        .then((story) => {
+            story.featured = !story.featured;
+            Story.findOneAndUpdate(
+                {"_id": story.id},
+                {"$set":
+                    {
+                        private: request.body.private === true,
+                        sharedWith: request.body.sharedWith.map((e) => stripHtml(e).result.trim().toLowerCase())
+                    }
+                }
+            ).then(() => {
+                response.status(200).json({success: true});
+            });
+        }).catch((err) => {
+            next(err);
+        });
+}
+
 /**
  * Update step HTML with prepared image
- * @param {Object} request description
- * @param {Object} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -145,18 +177,25 @@ function updateHtml (request, response, next) {
 // GET
 
 /**
- * description
+ * Returns all stories with short information
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
 function index (request, response, next) {
-    Story.find(queryBuilder(request), "_id title author description titleImage owner featured")
-        .sort(orderBuilder(request))
+    Story.find(
+        queryBuilder(request),
+        "_id title author description titleImage owner featured private sharedWith updatedAt"
+    ).sort(orderBuilder(request))
         .exec()
         .then((stories) => {
+            // Disable caching
+            response.header("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.header("Pragma", "no-cache");
+            response.header("Expires", 0);
+
             response.json(stories);
         }).catch((err) => {
             next(err);
@@ -166,8 +205,8 @@ function index (request, response, next) {
 /**
  * Returns all stories with further information necessary for the dipas story selector
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -199,10 +238,10 @@ function getStoriesForDipas (request, response, next) {
 }
 
 /**
- * Returns all th structure of all stories
+ * Returns all the structure of the story
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -230,10 +269,9 @@ function show (request, response, next) {
 
 /**
  * Removes story from database and all images from S3
- * TODO: keep all images in the same document (Story)
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -265,5 +303,6 @@ export {
     getStoriesForDipas,
     redirectToStep,
     updateHtml,
-    featured
+    featured,
+    privacy
 };

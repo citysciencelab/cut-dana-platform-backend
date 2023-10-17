@@ -6,13 +6,15 @@ import createError from "http-errors";
 import {Story} from "../models/story.js";
 import {s3client} from "../models/image.js";
 
+import {unsplash} from "../utils/unsplash.js";
+
 /* eslint-disable no-process-env */
 
 /**
  * storing image files on disk
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -33,8 +35,8 @@ const imageUpload = multer({
 /**
  * Add uploaded image to story
  *
- * @param {Object} request description
- * @param {Number} response description
+ * @param {Object} request http request
+ * @param {Object} response http response
  * @param {function} next description
  * @returns {void}
  */
@@ -68,6 +70,35 @@ function addImagePath (request, response, next) {
 }
 
 /**
+ * Suggest images from unsplash
+ *
+ * @param {Object} request http request
+ * @param {Object} response http response
+ * @returns {void}
+ */
+function suggest (request, response) {
+    unsplash.search.getPhotos({
+        query: request.query.q,
+        page: 1,
+        perPage: 10,
+        orientation: "landscape"
+    }).then((results) => {
+        const suggestion = results.response.results.map((result) => ({
+            id: result.id,
+            url: result.urls.regular,
+            user: {
+                id: result.user.id,
+                name: result.user.name
+            }
+        }));
+
+        return response.json(suggestion);
+    }).catch(() => {
+        return response.json([]);
+    });
+}
+
+/**
  * Extract and prepare image metadata
  * @param {Object} request passed from top-level function
  * @returns {Object} extracted file metadata
@@ -81,4 +112,4 @@ function fileMetaInfo (request) {
     };
 }
 
-export {imageUpload, addImagePath};
+export {imageUpload, addImagePath, suggest};
