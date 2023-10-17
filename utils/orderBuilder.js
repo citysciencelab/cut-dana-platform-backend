@@ -6,7 +6,7 @@
 */
 export function orderBuilder (request) {
     if (request.query.mode === "popular") {
-        return {createdAt: -1};
+        return {views: -1};
     }
     return {createdAt: -1};
 }

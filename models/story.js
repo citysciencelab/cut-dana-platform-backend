@@ -48,6 +48,11 @@ const storySchema = new Schema({
         type: Boolean,
         default: false,
         index: true
+    },
+    views: {
+        type: Number,
+        default: 0,
+        index: true
     }
 }, {
     timestamps: true,

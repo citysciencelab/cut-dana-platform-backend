@@ -218,7 +218,10 @@ function show (request, response, next) {
             )) {
                 throw createError(403, "Forbidden");
             }
-            response.json(story);
+
+            Story.findOneAndUpdate({"_id": story.id}, {$inc: {"views": 1}}).then(() => {
+                response.json(story);
+            });
         }).catch((err) => {
             next(err);
         });
