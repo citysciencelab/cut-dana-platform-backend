@@ -1,10 +1,10 @@
 import createError from "http-errors";
 import {stripHtml} from "string-strip-html";
 
-import {Story} from "../models/story.js";
 import {deleteImagesFromS3} from "../models/image.js";
-import {queryBuilder} from "../utils/queryBuilder.js";
+import {Story} from "../models/story.js";
 import {orderBuilder} from "../utils/orderBuilder.js";
+import {queryBuilder} from "../utils/queryBuilder.js";
 
 
 /**
@@ -195,7 +195,6 @@ function index (request, response, next) {
             response.header("Cache-Control", "no-cache, no-store, must-revalidate");
             response.header("Pragma", "no-cache");
             response.header("Expires", 0);
-
             response.json(stories);
         }).catch((err) => {
             next(err);
@@ -295,14 +294,6 @@ function remove (request, response, next) {
 
 
 export {
-    index,
-    show,
-    create,
-    update,
-    remove,
-    getStoriesForDipas,
-    redirectToStep,
-    updateHtml,
-    featured,
-    privacy
+    create, featured, getStoriesForDipas, index, privacy, redirectToStep, remove, show, update, updateHtml
 };
+
