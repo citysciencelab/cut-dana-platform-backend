@@ -1,7 +1,8 @@
-import {Schema} from "mongoose";
+import { Schema } from "mongoose";
 import sanitizeHtml from "sanitize-html";
-import {stripHtml} from "string-strip-html";
-import {layerSchema} from "./layer.js";
+import { stripHtml } from "string-strip-html";
+import { customDataSourceSchema } from "./customDataSource.js";
+import { layerSchema } from "./layer.js";
 
 
 export const stepSchema = new Schema({
@@ -20,6 +21,7 @@ export const stepSchema = new Schema({
     centerCoordinate: [Number],
     zoomLevel: Number,
     layers: [String | layerSchema],
+    customLayers: [customDataSourceSchema],
     interactionAddons: [String],
     is3D: Boolean,
     navigation3D: {
