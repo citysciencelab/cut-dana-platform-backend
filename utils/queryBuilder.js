@@ -5,7 +5,7 @@
  * @param {Object} request HTTP request
  * @returns {Object} MongoDB query
  */
-function defaultQuery (request) {
+export function defaultQuery (request) {
     if (request.isAdmin) {
         return {};
     }

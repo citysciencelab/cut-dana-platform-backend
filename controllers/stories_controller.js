@@ -115,13 +115,12 @@ function featured (request, response, next) {
  * @returns {void}
  */
 function privacy (request, response, next) {
-    if (request.isAdmin === false) {
-        throw createError(403, "Forbidden");
-    }
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            story.featured = !story.featured;
+            if (story.owner !== request.user?.sub && request.isAdmin === false) {
+                throw createError(403, "Forbidden");
+            }
             Story.findOneAndUpdate(
                 {"_id": story.id},
                 {"$set":

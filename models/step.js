@@ -5,6 +5,8 @@ import { customDataSourceSchema } from "./customDataSource.js";
 import { layerSchema } from "./layer.js";
 
 
+import {datasourceSchema} from "./datasource.js";
+
 export const stepSchema = new Schema({
     stepNumber: {
         type: Number,
@@ -28,7 +30,9 @@ export const stepSchema = new Schema({
         cameraPosition: [Number],
         heading: Number,
         pitch: Number
-    }
+    },
+    backgroundMapId: String,
+    datasources: [datasourceSchema]
 });
 
 // eslint-disable-next-line one-var
