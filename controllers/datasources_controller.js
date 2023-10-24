@@ -28,7 +28,7 @@ const datasourceUpload = multer({
         acl: "private",
         bucket: process.env.AWS_BUCKET_NAME,
         key: function (req, file, cb) {
-            cb(null, req.params.image_hash + "." + mime.extension(file.mimetype));
+            cb(null, req.params.datasource_hash);
         }
     })
 });
