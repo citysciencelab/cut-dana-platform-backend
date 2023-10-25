@@ -1,8 +1,8 @@
-import {Router} from "express";
+import { Router } from "express";
 import mongoSanitize from "express-mongo-sanitize";
+import * as datasources_controller from "../controllers/datasources_controller.js";
 import * as images_controller from "../controllers/images_controller.js";
 import * as stories_controller from "../controllers/stories_controller.js";
-import * as datasources_controller from "../controllers/datasources_controller.js";
 
 const router = new Router();
 
@@ -30,6 +30,7 @@ router.post("/datasources/:story_id/:datasource_hash",
     datasources_controller.datasourceUpload.single("datasource"),
     (req, res) => {
         res.status(200);
+        return res.send();
     }
 );
 
