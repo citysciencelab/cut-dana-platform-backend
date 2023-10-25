@@ -27,7 +27,10 @@ router.post("/images/:story_id/:step_major/:step_minor/:image_hash",
     images_controller.addImagePath
 );
 router.post("/datasources/:story_id/:datasource_hash",
-    datasources_controller.datasourceUpload.single("datasource")
+    datasources_controller.datasourceUpload.single("datasource"),
+    (req, res) => {
+        res.status(200);
+    }
 );
 
 // PATCH
