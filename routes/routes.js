@@ -1,4 +1,4 @@
-import { Router } from "express";
+import {Router} from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import * as datasources_controller from "../controllers/datasources_controller.js";
 import * as images_controller from "../controllers/images_controller.js";

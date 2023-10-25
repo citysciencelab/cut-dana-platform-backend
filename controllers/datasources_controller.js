@@ -1,4 +1,3 @@
-import mime from "mime-types";
 import multer from "multer";
 import multerS3 from "multer-s3";
 import createError from "http-errors";
@@ -45,7 +44,7 @@ function getDatasource (request, response, next) {
     Story.findOne({
         "$and": [
             {"_id": request.params.story_id},
-            {"steps.datasources.hash": request.params.datasource_hash},
+            {"steps.datasources.key": request.params.datasource_hash},
             defaultQuery(request)
         ]})
         .orFail(createError(404, "Datasource not found")).exec()
