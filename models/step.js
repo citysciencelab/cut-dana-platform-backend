@@ -30,7 +30,8 @@ export const stepSchema = new Schema({
         pitch: Number
     },
     backgroundMapId: String,
-    datasources: [datasourceSchema]
+    datasources: [datasourceSchema],
+    wmsLayers: [String]
 });
 
 // eslint-disable-next-line one-var
