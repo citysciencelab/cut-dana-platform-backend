@@ -32,7 +32,7 @@ function create (request, response, next) {
     // Strict schema prevents from saving unvanted data
     const newStory = request.body;
 
-    newStory.author = newStory.author || request.user?.name || "anonymous";
+    newStory.author = request.user?.preferred_username || request.user?.name || "anonymous";
     newStory.owner = request.user?.sub || "anonymous";
     Story.create(newStory).then((story) => {
         response.status(201).json({success: true, storyId: story._id});
@@ -51,8 +51,7 @@ function create (request, response, next) {
  * @returns {void}
  */
 function update (request, response, next) {
-    const newStory = request.body,
-        author = newStory.author || request.user?.name || "anonymous";
+    const newStory = request.body;
 
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
@@ -64,7 +63,6 @@ function update (request, response, next) {
             return story.set({
                 titleImage: story.checkTitleImage(newStory.titleImage)[0],
                 title: newStory.title,
-                author: author,
                 description: newStory.description,
                 storyInterval: newStory.storyInterval,
                 chapters: newStory.chapters,
@@ -295,4 +293,3 @@ function remove (request, response, next) {
 export {
     create, featured, getStoriesForDipas, index, privacy, redirectToStep, remove, show, update, updateHtml
 };
-
