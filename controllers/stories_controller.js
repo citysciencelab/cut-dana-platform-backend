@@ -154,8 +154,12 @@ function updateHtml (request, response, next) {
             Story.findOneAndUpdate(
                 {
                     "_id": story.id,
-                    "steps.associatedChapter": parseInt(request.params.step_major, 10),
-                    "steps.stepNumber": parseInt(request.params.step_minor, 10)
+                    "steps": {
+                        $elemMatch: {
+                            "associatedChapter": parseInt(request.params.step_major, 10),
+                            "stepNumber": parseInt(request.params.step_minor, 10)
+                        }
+                    }
                 },
                 {
                     "$set": {
