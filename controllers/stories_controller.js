@@ -1,10 +1,10 @@
 import createError from "http-errors";
-import {stripHtml} from "string-strip-html";
+import { stripHtml } from "string-strip-html";
 
-import {deleteImagesFromS3} from "../models/image.js";
-import {Story} from "../models/story.js";
-import {orderBuilder} from "../utils/orderBuilder.js";
-import {queryBuilder} from "../utils/queryBuilder.js";
+import { deleteImagesFromS3 } from "../models/image.js";
+import { Story } from "../models/story.js";
+import { orderBuilder } from "../utils/orderBuilder.js";
+import { queryBuilder } from "../utils/queryBuilder.js";
 
 
 /**
@@ -150,6 +150,8 @@ function updateHtml (request, response, next) {
                 throw createError(403, "Forbidden");
             }
             const html = story.prepareHtml(request.body.html);
+
+            console.log(html);
 
             Story.findOneAndUpdate(
                 {
