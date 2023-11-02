@@ -16,7 +16,7 @@ import {queryBuilder} from "../utils/queryBuilder.js";
  */
 function redirectToStep (request, response) {
     // eslint-disable-next-line no-process-env
-    response.status(301).redirect(`${process.env.FRONTEND_URI}?story=${request.params.story_id}&step=${request.params.step_index}`);
+    response.redirect(301, `${process.env.FRONTEND_URI}?story=${request.params.story_id}&step=${request.params.step_index}`);
 }
 
 
@@ -154,8 +154,12 @@ function updateHtml (request, response, next) {
             Story.findOneAndUpdate(
                 {
                     "_id": story.id,
-                    "steps.associatedChapter": parseInt(request.params.step_major, 10),
-                    "steps.stepNumber": parseInt(request.params.step_minor, 10)
+                    "steps": {
+                        $elemMatch: {
+                            "associatedChapter": parseInt(request.params.step_major, 10),
+                            "stepNumber": parseInt(request.params.step_minor, 10)
+                        }
+                    }
                 },
                 {
                     "$set": {
@@ -243,7 +247,7 @@ function getStoriesForDipas (request, response, next) {
  */
 function show (request, response, next) {
     Story.findById(request.params.story_id)
-        .orFail(createError(404, "Story not found")).exec()
+        .orFail(createError(404, "Story not found"))
         .then((story) => {
             if (story.private && (!request.user ||
                     (request.isAdmin === false &&

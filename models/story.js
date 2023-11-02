@@ -1,4 +1,4 @@
-import {model, Schema} from "mongoose";
+import {model, Schema, modelNames} from "mongoose";
 import {parse} from "node-html-parser";
 import {stripHtml} from "string-strip-html";
 import sanitizeHtml from "sanitize-html";
@@ -101,6 +101,6 @@ storySchema.pre("save", function (next) {
 });
 
 // eslint-disable-next-line one-var
-const Story = model("Story", storySchema);
+const Story = modelNames().includes("Story") ? model("Story") : model("Story", storySchema);
 
 export {Story, storySchema};

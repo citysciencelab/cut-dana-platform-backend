@@ -7,13 +7,11 @@
  * @returns {void}
  */
 export function authMiddleware (request, response, next) {
+    request.user = null;
     if (request.headers.authorization) {
         const token = request.headers.authorization?.split(" ")[1];
 
-        if (!token) {
-            request.user = null;
-        }
-        else {
+        if (token) {
 
             const base64Url = token.split(".")[1],
                 base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/"),
@@ -23,10 +21,7 @@ export function authMiddleware (request, response, next) {
                 payload = JSON.parse(jsonPayload);
 
             // console.log("payload", payload); // .resource_access.account.roles);
-            if (payload.realm_access.roles.includes("admin")) {
-                request.isAdmin = true;
-            }
-
+            request.isAdmin = payload.realm_access.roles.includes("admin");
             request.user = payload;
         }
     }

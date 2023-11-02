@@ -1,9 +1,8 @@
 import {Schema} from "mongoose";
 import sanitizeHtml from "sanitize-html";
 import {stripHtml} from "string-strip-html";
+
 import {layerSchema} from "./layer.js";
-
-
 import {datasourceSchema} from "./datasource.js";
 
 export const stepSchema = new Schema({

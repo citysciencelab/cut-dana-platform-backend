@@ -4,7 +4,7 @@ import createError from "http-errors";
 import {formatUrl} from "@aws-sdk/util-format-url";
 
 import {Story} from "../models/story.js";
-import {getSignedUrl} from "../models/datasource.js";
+import {getSignedUrl} from "../utils/s3Actions.js";
 import {s3client} from "../models/image.js";
 import {defaultQuery} from "../utils/queryBuilder.js";
 
@@ -41,16 +41,16 @@ const datasourceUpload = multer({
  * @returns {void}
  */
 function getDatasource (request, response, next) {
-    Story.findOne({
+    return Story.findOne({
         "$and": [
             {"_id": request.params.story_id},
             {"steps.datasources.key": request.params.datasource_hash},
             defaultQuery(request)
         ]})
-        .orFail(createError(404, "Datasource not found")).exec()
+        .orFail(createError(404, "Datasource not found"))
         .then(() => getSignedUrl(request.params.datasource_hash))
         .then((url) => {
-            response.status(302).redirect(formatUrl(url));
+            response.redirect(302, formatUrl(url));
         }).catch((err) => {
             next(err);
         });
