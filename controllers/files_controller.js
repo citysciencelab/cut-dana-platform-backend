@@ -1,6 +1,7 @@
 import multer from "multer";
 import multerS3 from "multer-s3";
 
+import { format as formatUrl } from "node:url";
 import { v4 as uuidv4 } from "uuid";
 import { Folder } from "../models/folder.js";
 import { s3client } from "../models/image.js";
@@ -38,19 +39,28 @@ const datasourceUpload = multer({
  * @param {void} next next function
  * @returns {void}
  */
-function addFilePath (request, response, next) {
+async function addFilePath (request, response, next) {
     // create new folder on the database, all the files wil be stored in this folder
-    const filePath = request.params[0],
-        newFilePath = `/${uuidv4()}/${filePath}`,
 
-        filename = filePath.split("/").pop(),
-        newFolder = {
-            context: newFilePath,
-            files: request.files
-        };
+    const filePath = request.params.path ? request.params.path : "",
+        newFilePath = `/${uuidv4()}${filePath ? "/" + filePath : ""}`,
 
-    Folder.create(newFolder).then((folder) => {
-        response.status(201).json({success: true, folder: folder.context});
+        folders = request.files.reduce((acc, file) => {
+            acc[file.fieldname] = acc[`${newFilePath}/${file.fieldname}`] || [];
+            acc[file.fieldname].push({
+                location: file.location,
+                originalname: file.originalname,
+                key: file.key
+            }); // Use file.location for S3 URL
+            return acc;
+        }, {}),
+        newFolders = Object.entries(folders).map(([context, files]) => {
+            return {context: context !== "files" ? `${newFilePath}/${context}` : newFilePath, files: [...files]};
+        });
+
+
+    Folder.insertMany(newFolders).then((f) => {
+        response.status(201).json({success: true, folder: newFilePath});
     }).catch((err) => {
         next(err);
     });
@@ -67,13 +77,37 @@ function addFilePath (request, response, next) {
  * @param {function} next description
  * @returns {void}
  */
-function getDatasource (request, response, next) {
-    const filePath = request.params[0];
+async function getDatasource (request, response, next) {
+    try {
+        const pathContext = request.params.path.split("/"),
+            filename = pathContext.pop(),
+            folderContext = pathContext.join("/"),
 
-    console.log(filePath);
-    // check the databse here. The filename should be requested from the mongodb and the stored url should be redirected.
-    // console.log(request.params.datasource_hash);
-    response.status(200).json({success: true, filePath});
+            // Assuming you have a model that stores folder information along with files
+            // You might need to adjust the query depending on your schema
+            folder = await Folder.findOne({context: `/${folderContext}`}),
+            file = folder.files.find(f => filename === f.originalname);
+
+        if (file) {
+            // Assuming the 'files' field in your Folder model is an array of file references
+            // You can then map these to their S3 URLs or any other required data
+            // const fileData = folder.files.map(file => {
+            //     return {
+            //         name: file.name,
+            //         s3Url: file.s3Url
+            //     };
+            // });
+
+            response.redirect(302, formatUrl(file.location));
+        }
+        else {
+            response.status(404).send("File not found");
+        }
+
+    }
+    catch (error) {
+        response.status(500).send(error.message);
+    }
 }
 
 export {

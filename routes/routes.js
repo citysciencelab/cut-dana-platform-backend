@@ -16,7 +16,7 @@ router.get("/images/suggest", images_controller.suggest);
 router.get("/datasources/:story_id/:datasource_hash", datasources_controller.getDatasource);
 
 router.get("/dipastoryselector", stories_controller.getStoriesForDipas);
-router.get("/files/*", files_controller.getDatasource);
+router.get("/files/:path(*)?", files_controller.getDatasource);
 
 
 // POST
@@ -36,7 +36,7 @@ router.post("/datasources/:story_id/:datasource_hash",
     }
 );
 
-router.post("/files/*", files_controller.datasourceUpload.array("files", 10), files_controller.addFilePath);
+router.post("/files/:path(*)?", files_controller.datasourceUpload.any(), files_controller.addFilePath);
 
 // PATCH
 router.patch("/stories/:story_id/featured", stories_controller.featured);

@@ -5,8 +5,8 @@ import { s3client } from "../models/image.js";
 /* eslint-disable no-process-env */
 const fileSchema = new Schema({
         originalname: String,
-        key: String
-
+        key: String,
+        location: String
     }),
 
     folderSchema = new Schema({
