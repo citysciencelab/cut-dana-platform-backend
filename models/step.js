@@ -5,6 +5,7 @@ import {stripHtml} from "string-strip-html";
 import {datasourceSchema} from "./datasource.js";
 import {layerSchema} from "./layer.js";
 import {wmsSchema} from "./wms.js";
+import {threeDModelSchema} from "./3dModel.js";
 
 export const stepSchema = new Schema({
     stepNumber: {
@@ -31,7 +32,8 @@ export const stepSchema = new Schema({
     },
     backgroundMapId: String,
     datasources: [datasourceSchema],
-    wmsLayers: [wmsSchema]
+    wmsLayers: [wmsSchema],
+    threeDModels: [threeDModelSchema]
 });
 
 // eslint-disable-next-line one-var
