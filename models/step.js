@@ -33,7 +33,7 @@ export const stepSchema = new Schema({
     backgroundMapId: String,
     datasources: [datasourceSchema],
     wmsLayers: [wmsSchema],
-    threeDModels: [threeDModelSchema]
+    threeDFiles: [threeDModelSchema]
 });
 
 // eslint-disable-next-line one-var

@@ -53,6 +53,11 @@ const storySchema = new Schema({
         type: Number,
         default: 0,
         index: true
+    },
+    threeDFilesId: {
+        type: String,
+        default: "",
+        required: false
     }
 }, {
     timestamps: true,

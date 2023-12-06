@@ -1,4 +1,4 @@
-import { Router } from "express";
+import {Router} from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import * as datasources_controller from "../controllers/datasources_controller.js";
 import * as files_controller from "../controllers/files_controller.js";
@@ -49,6 +49,8 @@ router.patch("/stories/:story_id",
     mongoSanitize(),
     stories_controller.update
 );
+router.patch("/stories/:story_id/files", files_controller.updateFiles);
+router.patch("/stories/:story_id/:step_major/:step_minor/files", files_controller.updateStepFiles);
 
 // DELETE
 router.delete("/stories/:story_id", stories_controller.remove);

@@ -32,11 +32,13 @@ function create (request, response, next) {
     // Strict schema prevents from saving unvanted data
     const newStory = request.body;
 
+
     newStory.author = request.user?.preferred_username || request.user?.name || "anonymous";
     newStory.owner = request.user?.sub || "anonymous";
     Story.create(newStory).then((story) => {
         response.status(201).json({success: true, storyId: story._id});
     }).catch((err) => {
+        console.error(err);
         next(err);
     });
 }

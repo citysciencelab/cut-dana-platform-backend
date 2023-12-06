@@ -1,7 +1,7 @@
 
 import {Schema} from "mongoose";
 
-export const positionSchema = new Schema({
+const positionSchema = new Schema({
         x: Number,
         y: Number,
         z: Number
@@ -14,10 +14,19 @@ export const positionSchema = new Schema({
         w: Number
     }),
 
+    // file describes the file type
     threeDModelSchema = new Schema({
         name: String,
         url: String,
+        file: String,
         position: positionSchema,
         orientation: orientationSchema
     });
 
+threeDModelSchema.add({
+    children: [threeDModelSchema]
+});
+
+export {
+    threeDModelSchema
+};
