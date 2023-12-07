@@ -8,19 +8,20 @@ const positionSchema = new Schema({
     }),
 
     orientationSchema = new Schema({
-        x: Number,
-        y: Number,
-        z: Number,
-        w: Number
+        header: Number,
+        pitch: Number,
+        roll: Number
     }),
 
     // file describes the file type
     threeDModelSchema = new Schema({
+        id: String,
         name: String,
         url: String,
         file: String,
         position: positionSchema,
-        orientation: orientationSchema
+        orientation: orientationSchema,
+        scale: String
     });
 
 threeDModelSchema.add({
