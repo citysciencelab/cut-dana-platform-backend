@@ -186,7 +186,7 @@ function updateHtml (request, response, next) {
  * @returns {void}
  */
 function index (request, response, next) {
-    const perPage = 3,
+    const perPage = 10,
         page = Math.max(1, parseInt(request.query.page, 10)) - 1;
 
     Story.find(
