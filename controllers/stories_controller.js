@@ -186,10 +186,13 @@ function updateHtml (request, response, next) {
  * @returns {void}
  */
 function index (request, response, next) {
+    const perPage = 3,
+        page = Math.max(1, parseInt(request.query.page, 10)) - 1;
+
     Story.find(
         queryBuilder(request),
         "_id title author description titleImage owner featured private sharedWith updatedAt"
-    ).sort(orderBuilder(request))
+    ).limit(perPage).skip(perPage * page).sort(orderBuilder(request))
         .exec()
         .then((stories) => {
             // Disable caching
