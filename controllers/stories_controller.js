@@ -16,7 +16,7 @@ import {queryBuilder} from "../utils/queryBuilder.js";
  */
 function redirectToStep (request, response) {
     // eslint-disable-next-line no-process-env
-    response.status(301).redirect(`${process.env.FRONTEND_URI}?story=${request.params.story_id}&step=${request.params.step_index}`);
+    response.redirect(301, `${process.env.FRONTEND_URI}?story=${request.params.story_id}&step=${request.params.step_index}`);
 }
 
 
@@ -32,11 +32,13 @@ function create (request, response, next) {
     // Strict schema prevents from saving unvanted data
     const newStory = request.body;
 
+
     newStory.author = request.user?.preferred_username || request.user?.name || "anonymous";
     newStory.owner = request.user?.sub || "anonymous";
     Story.create(newStory).then((story) => {
         response.status(201).json({success: true, storyId: story._id});
     }).catch((err) => {
+        console.error(err);
         next(err);
     });
 }
@@ -250,7 +252,7 @@ function getStoriesForDipas (request, response, next) {
  */
 function show (request, response, next) {
     Story.findById(request.params.story_id)
-        .orFail(createError(404, "Story not found")).exec()
+        .orFail(createError(404, "Story not found"))
         .then((story) => {
             if (story.private && (!request.user ||
                     (request.isAdmin === false &&

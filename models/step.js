@@ -1,10 +1,11 @@
 import {Schema} from "mongoose";
 import sanitizeHtml from "sanitize-html";
 import {stripHtml} from "string-strip-html";
-import {layerSchema} from "./layer.js";
-
 
 import {datasourceSchema} from "./datasource.js";
+import {layerSchema} from "./layer.js";
+import {wmsSchema} from "./wms.js";
+import {threeDModelSchema} from "./3dModel.js";
 
 export const stepSchema = new Schema({
     stepNumber: {
@@ -31,7 +32,8 @@ export const stepSchema = new Schema({
     },
     backgroundMapId: String,
     datasources: [datasourceSchema],
-    wmsLayers: [String]
+    wmsLayers: [wmsSchema],
+    threeDFiles: [threeDModelSchema]
 });
 
 // eslint-disable-next-line one-var

@@ -5,7 +5,7 @@
   "description": "Backend that serves the APIs needed for the Story Creation and Story Telling Tool",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --recursive --exit -r dotenv/config --timeout 15000",
     "dev": "nodemon --exec babel-node index.js",
     "debug": "DEBUG=express:* nodemon --exec babel-node index.js",
     "start": "node index.js"
@@ -33,6 +33,7 @@
     "nodemon": "^2.0.16",
     "path": "^0.12.7",
     "sanitize-html": "^2.11.0",
+    "sinon-chai": "^3.7.0",
     "string-strip-html": "^13.4.3",
     "unsplash-js": "^7.0.18"
   },
@@ -43,6 +44,15 @@
     "@babel/cli": "^7.22.10",
     "@babel/core": "^7.22.11",
     "@babel/node": "^7.22.10",
-    "@babel/preset-env": "^7.22.14"
+    "@babel/preset-env": "^7.22.14",
+    "@faker-js/faker": "^8.2.0",
+    "chai": "^4.3.10",
+    "chai-http": "^4.4.0",
+    "fishery": "^2.2.2",
+    "jsonwebtoken": "^9.0.2",
+    "mocha": "^10.2.0",
+    "node-mocks-http": "^1.13.0",
+    "sinon": "^17.0.0",
+    "supertest": "^6.3.3"
   }
 }
