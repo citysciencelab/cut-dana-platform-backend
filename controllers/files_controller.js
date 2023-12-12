@@ -43,15 +43,18 @@ const datasourceUpload = multer({
  */
 async function addFilePath (request, response, next) {
     // create new folder on the database, all the files wil be stored in this folder
-
     try {
 
         const filePath = request.params.path ? request.params.path : "",
-            pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
-            newFilePath = `/${pathPrefix}${filePath ? "/" + filePath : ""}`,
+            // pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
+            newFilePath = `${filePath ? "/" + filePath : ""}`,
             folders = request.files.reduce((acc, file) => {
-                acc[file.fieldname] = acc[`${newFilePath}/${file.fieldname}`] || [];
-                acc[file.fieldname].push({
+                const key = `${newFilePath}/${file.fieldname}`;
+
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push({
                     location: file.location,
                     originalname: file.originalname,
                     key: file.key
@@ -59,7 +62,13 @@ async function addFilePath (request, response, next) {
                 return acc;
             }, {}),
             newFolders = Object.entries(folders).map(([context, files]) => {
-                return {context: context !== "files" ? `${newFilePath}/${context}` : newFilePath, files: [...files]};
+                console.log("new Folders", files, context);
+
+                const splitContext = context.split("/"),
+                    folderName = splitContext.pop(),
+                    newContext = splitContext.join("/");
+
+                return {context: folderName !== "ROOT_FILES_FOLDER_8943012" ? `${newFilePath}/${newContext}/${folderName}` : `${newFilePath}/${newContext}`, files: [...files]};
             });
 
 
@@ -125,7 +134,6 @@ async function getDatasource (request, response, next) {
  * @returns {void}
  */
 async function updateFiles (request, response, next) {
-    console.log(request.body);
     try {
         const {threeDFilesUrl} = request.body,
             storyId = request.params.story_id, // assuming the story id is passed in the url
