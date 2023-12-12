@@ -43,11 +43,12 @@ const datasourceUpload = multer({
  */
 async function addFilePath (request, response, next) {
     // create new folder on the database, all the files wil be stored in this folder
-    console.log(request.files);
 
     try {
+
         const filePath = request.params.path ? request.params.path : "",
-            newFilePath = `/${uuidv4()}${filePath ? "/" + filePath : ""}`,
+            pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
+            newFilePath = `/${pathPrefix}${filePath ? "/" + filePath : ""}`,
             folders = request.files.reduce((acc, file) => {
                 acc[file.fieldname] = acc[`${newFilePath}/${file.fieldname}`] || [];
                 acc[file.fieldname].push({
