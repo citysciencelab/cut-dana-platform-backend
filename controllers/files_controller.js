@@ -45,9 +45,31 @@ async function addFilePath (request, response, next) {
     // create new folder on the database, all the files wil be stored in this folder
     try {
 
+        // const filePath = request.params.path ? request.params.path : "",
+        //     // pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
+        //     newFilePath = `${filePath ? "/" + filePath : ""}`,
+        //     folders = request.files.reduce((acc, file) => {
+        //         const key = `${newFilePath}/${file.fieldname}`;
+
+        //         if (!acc[key]) {
+        //             acc[key] = [];
+        //         }
+        //         acc[key].push({
+        //             location: file.location,
+        //             originalname: file.originalname,
+        //             key: file.key
+        //         }); // Use file.location for S3 URL
+        //         return acc;
+        //     }, {}),
+        //     newFolders = Object.entries(folders).map(([context, files]) => {
+        //         console.log("new Folders", files, context);
+        //         return {context: context !== "ROOT_FILES_FOLDER_8943012" ? `${newFilePath}/${context}` : newFilePath, files: [...files]};
+        //     });
+
+
         const filePath = request.params.path ? request.params.path : "",
-            // pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
-            newFilePath = `${filePath ? "/" + filePath : ""}`,
+            pathPrefix = uuidv4(),
+            newFilePath = `/${pathPrefix}${filePath ? "/" + filePath : ""}`,
             folders = request.files.reduce((acc, file) => {
                 const key = `${newFilePath}/${file.fieldname}`;
 
@@ -68,7 +90,7 @@ async function addFilePath (request, response, next) {
                     folderName = splitContext.pop(),
                     newContext = splitContext.join("/");
 
-                return {context: folderName !== "ROOT_FILES_FOLDER_8943012" ? `${newFilePath}/${newContext}/${folderName}` : `${newFilePath}/${newContext}`, files: [...files]};
+                return {context: folderName !== "ROOT_FILES_FOLDER_8943012" ? `${newContext}/${folderName}` : `${newContext}`, files: [...files]};
             });
 
 
@@ -102,6 +124,7 @@ async function getDatasource (request, response, next) {
             folder = await Folder.findOne({context: `/${folderContext}`}),
             file = folder.files.find(f => filename === f.originalname);
 
+        console.log("FOLDER", folder, folderContext, filename);
         if (file) {
             // Assuming the 'files' field in your Folder model is an array of file references
             // You can then map these to their S3 URLs or any other required data
@@ -117,7 +140,7 @@ async function getDatasource (request, response, next) {
         else {
             response.status(404).send("File not found");
         }
-
+        // response.status(200).send(folder);
     }
     catch (error) {
         response.status(500).send(error.message);
@@ -134,6 +157,7 @@ async function getDatasource (request, response, next) {
  * @returns {void}
  */
 async function updateFiles (request, response, next) {
+    console.log(request.body);
     try {
         const {threeDFilesUrl} = request.body,
             storyId = request.params.story_id, // assuming the story id is passed in the url
