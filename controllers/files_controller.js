@@ -114,6 +114,7 @@ async function addFilePath (request, response, next) {
  * @returns {void}
  */
 async function getDatasource (request, response, next) {
+    console.log("HERE");
     try {
         const pathContext = request.params.path.split("/"),
             filename = pathContext.pop(),
@@ -124,7 +125,6 @@ async function getDatasource (request, response, next) {
             folder = await Folder.findOne({context: `/${folderContext}`}),
             file = folder.files.find(f => filename === f.originalname);
 
-        console.log("FOLDER", folder, folderContext, filename);
         if (file) {
             // Assuming the 'files' field in your Folder model is an array of file references
             // You can then map these to their S3 URLs or any other required data

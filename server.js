@@ -11,7 +11,7 @@ import {errorHandlerMiddleware} from "./utils/errorHandlerMiddleware.js";
 const app = express();
 
 app.use(logger("dev"));
-app.use(cors({origin: "*"}));
+app.use(cors({origin: "https://localhost:9001"}));
 app.use(express.json({limit: "25mb"}));
 app.use(bodyParser.json());
 
