@@ -143,6 +143,7 @@ async function getDatasource (request, response, next) {
         // response.status(200).send(folder);
     }
     catch (error) {
+        console.log(error);
         response.status(500).send(error.message);
     }
 }
