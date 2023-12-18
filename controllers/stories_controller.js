@@ -55,6 +55,10 @@ function create (request, response, next) {
 function update (request, response, next) {
     const newStory = request.body;
 
+    newStory.threeDFiles.forEach(file => {
+        delete file.obj;
+    });
+
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
@@ -71,7 +75,8 @@ function update (request, response, next) {
                 displayType: newStory.displayType,
                 steps: newStory.steps,
                 private: newStory.private,
-                sharedWith: newStory.sharedWith
+                sharedWith: newStory.sharedWith,
+                threeDFiles: newStory.threeDFiles
             }).save();
         }).then(() => {
             response.status(200).json({success: true, storyID: request.params.story_id});

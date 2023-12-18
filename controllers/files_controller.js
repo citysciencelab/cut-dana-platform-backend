@@ -182,6 +182,61 @@ async function updateFiles (request, response, next) {
     }
 }
 
+
+/**
+ * Adds the file path to the story
+ *
+ * @param {Object} request http request
+ * @param {Object} response http response
+ * @param {function} next description
+ * @returns {void}
+ */
+async function updateNewFiles (request, response, next) {
+    const pathPrefix = request.query.threeDFilesId,
+        files = request.files.map(file => {
+            const filePath = file.fieldname,
+                newFilePath = `${pathPrefix}${filePath ? "/" + filePath : ""}`;
+
+            return {
+                ...file,
+                filePath: newFilePath.replace("/ROOT_FILES_FOLDER_8943012", "/").replace(/\/$/, "")
+            };
+
+        }, {});
+
+    try {
+        console.log(files);
+
+        for (const file of files) {
+            const dbFolders = await Folder.find({context: file.filePath});
+
+            console.log("dbFolders", dbFolders);
+            // if the folder does not exist, create it
+            if (dbFolders.length === 0) {
+                const folder = new Folder({
+                    context: file.filePath,
+                    files: [file]
+                });
+
+                await folder.save();
+            }
+            else {
+                // if the folder exists, add the file to it
+                const dbFolder = dbFolders[0];
+
+                dbFolder.files.push(file);
+                await dbFolder.save();
+            }
+        }
+
+
+        return response.status(200).json({success: true});
+    }
+    catch (err) {
+        return response.status(500).send(err.message);
+    }
+}
+
 /**
  * This function will update the files and their paths in this step
  * @param {Object} request The request object
@@ -222,6 +277,6 @@ async function updateStepFiles (request, response, next) {
 }
 
 export {
-    addFilePath, datasourceUpload, getDatasource, updateFiles, updateStepFiles
+    addFilePath, datasourceUpload, getDatasource, updateFiles, updateStepFiles, updateNewFiles
 };
 
