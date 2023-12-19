@@ -8,10 +8,9 @@ const positionSchema = new Schema({
     }),
 
     orientationSchema = new Schema({
-        w: Number,
-        x: Number,
-        y: Number,
-        z: Number
+        heading: Number,
+        roll: Number,
+        pitch: Number
     }),
 
     // file describes the file type
