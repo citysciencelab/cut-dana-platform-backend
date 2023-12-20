@@ -23,6 +23,7 @@ export const stepSchema = new Schema({
     centerCoordinate: [Number],
     zoomLevel: Number,
     layers: [String | layerSchema],
+    layers3D: [String | layerSchema],
     interactionAddons: [String],
     is3D: Boolean,
     navigation3D: {
