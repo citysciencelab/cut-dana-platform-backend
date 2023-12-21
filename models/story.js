@@ -5,6 +5,7 @@ import sanitizeHtml from "sanitize-html";
 
 import {stepSchema, sanitizeOptions} from "./step.js";
 import {imageSchema, deleteImagesFromS3} from "./image.js";
+import {threeDModelSchema} from "./3dModel.js";
 
 const storySchema = new Schema({
     title: String,
@@ -58,7 +59,8 @@ const storySchema = new Schema({
         type: String,
         default: "",
         required: false
-    }
+    },
+    threeDFiles: [threeDModelSchema]
 }, {
     timestamps: true,
     methods: {

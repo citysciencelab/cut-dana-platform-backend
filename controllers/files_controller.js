@@ -43,14 +43,40 @@ const datasourceUpload = multer({
  */
 async function addFilePath (request, response, next) {
     // create new folder on the database, all the files wil be stored in this folder
-    console.log(request.files);
-
     try {
+
+        // const filePath = request.params.path ? request.params.path : "",
+        //     // pathPrefix = request.query.storyFilesUrl ? request.query.storyFilesUrl : uuidv4(),
+        //     newFilePath = `${filePath ? "/" + filePath : ""}`,
+        //     folders = request.files.reduce((acc, file) => {
+        //         const key = `${newFilePath}/${file.fieldname}`;
+
+        //         if (!acc[key]) {
+        //             acc[key] = [];
+        //         }
+        //         acc[key].push({
+        //             location: file.location,
+        //             originalname: file.originalname,
+        //             key: file.key
+        //         }); // Use file.location for S3 URL
+        //         return acc;
+        //     }, {}),
+        //     newFolders = Object.entries(folders).map(([context, files]) => {
+        //         console.log("new Folders", files, context);
+        //         return {context: context !== "ROOT_FILES_FOLDER_8943012" ? `${newFilePath}/${context}` : newFilePath, files: [...files]};
+        //     });
+
+
         const filePath = request.params.path ? request.params.path : "",
-            newFilePath = `/${uuidv4()}${filePath ? "/" + filePath : ""}`,
+            pathPrefix = uuidv4(),
+            newFilePath = `/${pathPrefix}${filePath ? "/" + filePath : ""}`,
             folders = request.files.reduce((acc, file) => {
-                acc[file.fieldname] = acc[`${newFilePath}/${file.fieldname}`] || [];
-                acc[file.fieldname].push({
+                const key = `${newFilePath}/${file.fieldname}`;
+
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push({
                     location: file.location,
                     originalname: file.originalname,
                     key: file.key
@@ -58,7 +84,13 @@ async function addFilePath (request, response, next) {
                 return acc;
             }, {}),
             newFolders = Object.entries(folders).map(([context, files]) => {
-                return {context: context !== "files" ? `${newFilePath}/${context}` : newFilePath, files: [...files]};
+                console.log("new Folders", files, context);
+
+                const splitContext = context.split("/"),
+                    folderName = splitContext.pop(),
+                    newContext = splitContext.join("/");
+
+                return {context: folderName !== "ROOT_FILES_FOLDER_8943012" ? `${newContext}/${folderName}` : `${newContext}`, files: [...files]};
             });
 
 
@@ -82,6 +114,7 @@ async function addFilePath (request, response, next) {
  * @returns {void}
  */
 async function getDatasource (request, response, next) {
+    console.log("HERE");
     try {
         const pathContext = request.params.path.split("/"),
             filename = pathContext.pop(),
@@ -107,9 +140,10 @@ async function getDatasource (request, response, next) {
         else {
             response.status(404).send("File not found");
         }
-
+        // response.status(200).send(folder);
     }
     catch (error) {
+        console.log(error);
         response.status(500).send(error.message);
     }
 }
@@ -145,6 +179,61 @@ async function updateFiles (request, response, next) {
     }
     catch (error) {
         return response.status(500).send(error.message);
+    }
+}
+
+
+/**
+ * Adds the file path to the story
+ *
+ * @param {Object} request http request
+ * @param {Object} response http response
+ * @param {function} next description
+ * @returns {void}
+ */
+async function updateNewFiles (request, response, next) {
+    const pathPrefix = request.query.threeDFilesId,
+        files = request.files.map(file => {
+            const filePath = file.fieldname,
+                newFilePath = `${pathPrefix}${filePath ? "/" + filePath : ""}`;
+
+            return {
+                ...file,
+                filePath: newFilePath.replace("/ROOT_FILES_FOLDER_8943012", "/").replace(/\/$/, "")
+            };
+
+        }, {});
+
+    try {
+        console.log(files);
+
+        for (const file of files) {
+            const dbFolders = await Folder.find({context: file.filePath});
+
+            console.log("dbFolders", dbFolders);
+            // if the folder does not exist, create it
+            if (dbFolders.length === 0) {
+                const folder = new Folder({
+                    context: file.filePath,
+                    files: [file]
+                });
+
+                await folder.save();
+            }
+            else {
+                // if the folder exists, add the file to it
+                const dbFolder = dbFolders[0];
+
+                dbFolder.files.push(file);
+                await dbFolder.save();
+            }
+        }
+
+
+        return response.status(200).json({success: true});
+    }
+    catch (err) {
+        return response.status(500).send(err.message);
     }
 }
 
@@ -188,6 +277,6 @@ async function updateStepFiles (request, response, next) {
 }
 
 export {
-    addFilePath, datasourceUpload, getDatasource, updateFiles, updateStepFiles
+    addFilePath, datasourceUpload, getDatasource, updateFiles, updateStepFiles, updateNewFiles
 };
 

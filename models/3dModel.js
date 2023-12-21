@@ -8,9 +8,9 @@ const positionSchema = new Schema({
     }),
 
     orientationSchema = new Schema({
-        header: Number,
-        pitch: Number,
-        roll: Number
+        heading: Number,
+        roll: Number,
+        pitch: Number
     }),
 
     // file describes the file type
@@ -18,10 +18,7 @@ const positionSchema = new Schema({
         id: String,
         name: String,
         url: String,
-        file: String,
-        position: positionSchema,
-        orientation: orientationSchema,
-        scale: String
+        file: String
     });
 
 threeDModelSchema.add({
@@ -29,5 +26,7 @@ threeDModelSchema.add({
 });
 
 export {
-    threeDModelSchema
+    threeDModelSchema,
+    orientationSchema,
+    positionSchema
 };

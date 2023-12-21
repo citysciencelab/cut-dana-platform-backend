@@ -50,6 +50,7 @@ router.patch("/stories/:story_id",
     stories_controller.update
 );
 router.patch("/stories/:story_id/files", files_controller.updateFiles);
+router.patch("/files/:path(*)?", files_controller.datasourceUpload.any(), files_controller.updateNewFiles);
 router.patch("/stories/:story_id/:step_major/:step_minor/files", files_controller.updateStepFiles);
 
 // DELETE
