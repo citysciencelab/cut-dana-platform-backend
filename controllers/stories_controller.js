@@ -35,6 +35,9 @@ function create (request, response, next) {
 
     newStory.author = request.user?.preferred_username || request.user?.name || "anonymous";
     newStory.owner = request.user?.sub || "anonymous";
+    if (newStory.owner === "anonymous") {
+        newStory.private = false;
+    }
     Story.create(newStory).then((story) => {
         response.status(201).json({success: true, storyId: story._id});
     }).catch((err) => {
@@ -64,6 +67,9 @@ function update (request, response, next) {
         .then((story) => {
             if (story.owner !== request.user?.sub && request.isAdmin === false) {
                 throw createError(403, "Forbidden");
+            }
+            if (story.owner === "anonymous") {
+                newStory.private = false;
             }
             // update story
             return story.set({
@@ -123,7 +129,7 @@ function privacy (request, response, next) {
     Story.findById(request.params.story_id)
         .orFail(createError(404, "Story not found")).exec()
         .then((story) => {
-            if (story.owner !== request.user?.sub && request.isAdmin === false) {
+            if ((story.owner !== request.user?.sub && request.isAdmin === false) || story.owner === "anonymous") {
                 throw createError(403, "Forbidden");
             }
             Story.findOneAndUpdate(
