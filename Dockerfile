@@ -1,15 +1,20 @@
-# Create container for running mobility-backend
 FROM node:16-alpine
 
-RUN mkdir -p /usr/app/story-backend/dist
+# Create app directory
 WORKDIR /usr/app/story-backend
 
-# Copy mobility-backend sources
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install app dependencies
+RUN npm install
+
+# Copy the rest of the application files
 COPY . .
 
-# Install and run mobility-backend
-RUN npm install --no-optional
-
+# Expose ports
 EXPOSE 80
 EXPOSE 443
-CMD npm start
+
+# Start the application
+CMD ["node", "index.js"]
