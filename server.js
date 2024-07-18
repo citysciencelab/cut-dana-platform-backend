@@ -22,7 +22,7 @@ app.use("/", routes);
 
 // catch 404 and forward to error handler
 app.use((request, response, next) => {
-    next(createError(404, "Path not found"));
+    next(createError(404, "Path not found!"));
 });
 
 // error handler
