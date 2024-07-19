@@ -5,10 +5,7 @@ RUN mkdir -p /usr/app/story-backend/dist
 WORKDIR /usr/app/story-backend
 
 # Copy mobility-backend sources
-COPY package.json index.js package-lock.json ./
-COPY routes ./routes
-COPY controllers ./controllers
-COPY prisma ./prisma
+COPY . .
 
 # Install and run mobility-backend
 RUN npm install --no-optional
