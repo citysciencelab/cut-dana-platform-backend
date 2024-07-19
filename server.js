@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 // Extract user info from token (if present)
 app.use(authMiddleware);
 
-app.use("/", routes);
+app.use("/db/", routes);
 
 // catch 404 and forward to error handler
 app.use((request, response, next) => {
