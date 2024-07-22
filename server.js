@@ -20,6 +20,14 @@ app.use(authMiddleware);
 
 app.use("/db/", routes);
 
+// Redirect HTTP to HTTPS
+app.use((req, res, next) => {
+    if (!req.secure) {
+        return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+});
+
 // catch 404 and forward to error handler
 app.use((request, response, next) => {
     console.log(request);
