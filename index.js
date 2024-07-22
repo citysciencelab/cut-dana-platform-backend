@@ -7,12 +7,10 @@ import https from "https";
 // Read SSL certificate and key files
 const key = fs.readFileSync("/etc/ssl/private/mykey.pem", "utf8"),
     cert = fs.readFileSync("/etc/ssl/certs/mycert.pem", "utf8"),
-    ca = fs.readFileSync("/etc/ssl/certs/myca.pem", "utf8"), // if you have a CA bundle
 
     httpsOptions = {
         key: key,
-        cert: cert,
-        ca: ca
+        cert: cert
     };
 
 // eslint-disable-next-line no-process-env
