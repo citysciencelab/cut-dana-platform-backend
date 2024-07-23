@@ -18,12 +18,6 @@ router.get("/datasources/:story_id/:datasource_hash", datasources_controller.get
 router.get("/dipastoryselector", stories_controller.getStoriesForDipas);
 router.get("/files/:path(*)?", files_controller.getDatasource);
 
-// Example route definitions
-router.get("/cats", (req, res) => {
-    // Your logic to handle the /stories endpoint
-    res.json([]);
-});
-
 
 // POST
 router.post("/stories",
