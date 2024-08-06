@@ -13,8 +13,8 @@ export function getSignedUrl (key) {
     const s3ObjectUrl = parseUrl(`https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`),
         presigner = new S3RequestPresigner({
             credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                accessKeyId: "ROOTNAME",
+                secretAccessKey: "CHANGEME123"
             },
             region: process.env.AWS_REGION,
             sha256: Hash.bind(null, "sha256")
