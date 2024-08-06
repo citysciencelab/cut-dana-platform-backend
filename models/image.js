@@ -14,8 +14,8 @@ const imageSchema = new Schema({
         }
     }),
     s3client = new S3Client({
-        secretAccessKey: "CHANGEME123",
-        accessKeyId: "ROOTNAME",
+        secretAccessKey: process.env.AWS_ACCESS_KEY_ID,
+        accessKeyId: process.env.AWS_SECRET_ACCESS_KEY,
         region: process.env.AWS_REGION
     });
 
