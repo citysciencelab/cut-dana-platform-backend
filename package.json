@@ -1,0 +1,23 @@
+{
+  "name": "story-backend",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run index.ts",
+    "generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prisma": "^6.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@namatery/multer-minio": "^1.1.2",
+    "@prisma/client": "^6.1.0",
+    "express": "^4.21.2",
+    "minio": "^8.0.3",
+    "multer": "^1.4.5-lts.1"
+  }
+}
