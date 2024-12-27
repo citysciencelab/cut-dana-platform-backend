@@ -5,140 +5,149 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Layer {
-    id           Int   @id @default(autoincrement())
-    transparency Float
-    selectionIDX Int
+  id           Int   @id @default(autoincrement())
+  transparency Float
+  selectionIDX Int
 }
 
 model Chapter {
-    id        Int         @id @default(autoincrement())
-    story     Story       @relation(fields: [storyId], references: [id])
-    storyId   Int // relation for step
-    StoryStep StoryStep[]
+  id        Int         @id @default(autoincrement())
+  story     Story       @relation(fields: [storyId], references: [id])
+  storyId   Int // relation for step
+  StoryStep StoryStep[]
 }
 
 model Navigation3D {
-    id             Int         @id @default(autoincrement())
-    cameraPosition Float[]
-    heading        Float
-    pitch          Float
-    step           StoryStep[]
+  id             Int         @id @default(autoincrement())
+  cameraPosition Float[]
+  heading        Float
+  pitch          Float
+  step           StoryStep[]
 }
 
 model Datasource {
-    id     Int       @id @default(autoincrement())
-    step   StoryStep @relation(fields: [stepId], references: [id])
-    stepId Int
+  id     Int       @id @default(autoincrement())
+  step   StoryStep @relation(fields: [stepId], references: [id])
+  stepId Int
 }
 
 model ThreeDFiles {
-    file        File      @relation(fields: [fileId], references: [id])
-    step        StoryStep @relation(fields: [storyStepId], references: [id])
-    fileId      Int
-    storyStepId Int
+  file        File      @relation(fields: [fileId], references: [id])
+  step        StoryStep @relation(fields: [storyStepId], references: [id])
+  fileId      Int
+  storyStepId Int
 
-    @@id([fileId, storyStepId])
+  @@id([fileId, storyStepId])
 }
 
 model wmsLayer {
-    id             Int       @id @default(autoincrement())
-    url            String
-    selectedLayers String[]
-    step           StoryStep @relation(fields: [stepId], references: [id])
-    stepId         Int
+  id             Int       @id @default(autoincrement())
+  url            String
+  selectedLayers String[]
+  step           StoryStep @relation(fields: [stepId], references: [id])
+  stepId         Int
 }
 
 model Orientation {
-    id              Int               @id @default(autoincrement())
-    heading         Float
-    roll            Float
-    pitch           Float
-    SelectedModelId SelectedModelId[]
+  id              Int               @id @default(autoincrement())
+  heading         Float
+  roll            Float
+  pitch           Float
+  SelectedModelId SelectedModelId[]
 }
 
 model Position {
-    id              Int               @id @default(autoincrement())
-    x               Float
-    y               Float
-    z               Float
-    SelectedModelId SelectedModelId[]
+  id              Int               @id @default(autoincrement())
+  x               Float
+  y               Float
+  z               Float
+  SelectedModelId SelectedModelId[]
 }
 
 model SelectedModelId {
-    id            Int         @id @default(autoincrement())
-    modelId       String
-    orientation   Orientation @relation(fields: [orientationId], references: [id])
-    scale         Float
-    orientationId Int
-    Position      Position?   @relation(fields: [positionId], references: [id])
-    positionId    Int?
+  id            Int         @id @default(autoincrement())
+  modelId       String
+  orientation   Orientation @relation(fields: [orientationId], references: [id])
+  scale         Float
+  orientationId Int
+  Position      Position?   @relation(fields: [positionId], references: [id])
+  positionId    Int?
 }
 
 model StoryStep {
-    id         Int @id @default(autoincrement())
-    stepNumber Int
+  id         Int @id @default(autoincrement())
+  stepNumber Int
 
-    chapter   Chapter @relation(fields: [chapterId], references: [id])
-    chapterId Int // relation for chapter
+  chapter   Chapter @relation(fields: [chapterId], references: [id])
+  chapterId Int // relation for chapter
 
-    stepWidth         Int
-    visible           Boolean
-    title             String
-    html              String
-    centerCoordinate  Float[]
-    zoomLevel         Int
-    interactionAddons String[]
-    is3D              Boolean
-    navigation3D      Navigation3D  @relation(fields: [navigation3DId], references: [id])
-    navigation3DId    Int
-    backgroundMapId   String
-    datasources       Datasource[]
-    wmsLayers         wmsLayer[]
-    ThreeDFiles       ThreeDFiles[]
+  stepWidth         Int
+  visible           Boolean
+  title             String
+  html              String
+  centerCoordinate  Float[]
+  zoomLevel         Int
+  interactionAddons String[]
+  is3D              Boolean
+  navigation3D      Navigation3D  @relation(fields: [navigation3DId], references: [id])
+  navigation3DId    Int
+  backgroundMapId   String
+  datasources       Datasource[]
+  wmsLayers         wmsLayer[]
+  ThreeDFiles       ThreeDFiles[]
 }
 
 model File {
-    id               Int           @id @default(autoincrement())
-    bucket           String
-    fileContext      String?
-    filename         String
-    key              String
-    provider         String
-    providerMetaData Json
-    fileSize         BigInt? // in bytes
-    mimetype         String
-    encoding         String
-    Story            Story[]
-    ThreeDFiles      ThreeDFiles[]
-    owner            String
+  id               Int           @id @default(autoincrement())
+  bucket           String
+  fileContext      String?
+  filename         String
+  key              String
+  provider         String
+  providerMetaData Json
+  fileSize         BigInt? // in bytes
+  mimetype         String
+  encoding         String
+  Story            Story[]
+  ThreeDFiles      ThreeDFiles[]
+  owner            String?
 }
 
 model Story {
-    id            Int       @id @default(autoincrement())
-    title         String
-    description   String
-    author        String
-    storyInterval Int
-    titleImage    File      @relation(fields: [titleImageId], references: [id])
-    titleImageId  Int // relation for file
-    displayType   String // maybe enum?
-    chapters      Chapter[]
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  author        String
+  storyInterval Int
+  titleImage    File      @relation(fields: [titleImageId], references: [id])
+  titleImageId  Int // relation for file
+  displayType   String // maybe enum?
+  chapters      Chapter[]
 
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    publishedAt DateTime
-    owner       String // user Id from keycloak
-    private     Boolean  @default(false)
-    sharedWith  String[] // user Ids from keycloak
-    featured    Boolean
-    views       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime
+  owner       String // user Id from keycloak
+  private     Boolean  @default(false)
+  sharedWith  String[] // user Ids from keycloak
+  featured    Boolean
+  views       Int
+}
+
+model KeycloakSetup {
+  id          Int    @id @default(autoincrement())
+  authUri     String
+  tokenUri    String
+  clientId    String
+  scope       String
+  redirectUri String
 }

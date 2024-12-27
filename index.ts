@@ -1,9 +1,12 @@
 import express from "express";
 import fileRoutes from "./routes/files";
+import authRouter from "./routes/login.ts";
+
 const app = express();
 const port = 8000;
 
 app.use("/files", fileRoutes);
+app.use("/auth", authRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");
