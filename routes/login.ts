@@ -1,6 +1,5 @@
 ﻿import {Router, type Request, type Response} from "express";
 import {PrismaClient} from "@prisma/client";
-import * as sea from "node:sea";
 
 const prismaClient = new PrismaClient();
 
@@ -24,12 +23,11 @@ authRouter.get('/login', async (request: Request, response: Response) => {
     searchParams.set("response_type", "code");
     
     const url = `${redirectUrl}?${searchParams.toString()}`;
-    console.log(url);
     
     return response.redirect(url);
 })
 
-authRouter.post('/auth', async (request: Request, response: Responsse) => {
+authRouter.post('/auth', async (request: Request, response: Response) => {
     const loginConfig = await prismaClient.keycloakSetup.findFirst();
 
     if (!loginConfig) {
@@ -46,9 +44,20 @@ authRouter.post('/auth', async (request: Request, response: Responsse) => {
     searchParams.set("response_type", "code");
 
     const url = `${redirectUrl}?${searchParams.toString()}`;
-    console.log(url);
 
     return response.redirect(url);
+})
+
+authRouter.get('/config', async (request: Request, response: Response) => {
+    const loginConfig = await prismaClient.keycloakSetup.findFirst();
+
+    if (!loginConfig) {
+        return response.status(401).send("Not Found");
+    }
+
+    return response.json({
+        ...loginConfig
+    });
 })
 
 export default authRouter;
