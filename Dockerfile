@@ -16,7 +16,7 @@ COPY . .
 # Expose the application port
 EXPOSE 8000
 
-RUN prisma generate
+RUN bunx prisma generate
 
 # Command to run the application
 CMD ["bun", "run", "index.ts"]
