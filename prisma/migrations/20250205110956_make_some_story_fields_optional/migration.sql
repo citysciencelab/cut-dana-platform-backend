@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Story" ALTER COLUMN "storyInterval" SET DEFAULT 10000,
+ALTER COLUMN "publishedAt" DROP NOT NULL,
+ALTER COLUMN "featured" SET DEFAULT false,
+ALTER COLUMN "views" SET DEFAULT 0,
+ALTER COLUMN "isDraft" SET DEFAULT true;
