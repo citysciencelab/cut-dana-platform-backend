@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: agriculturedev/new-dana-backend
+  IMAGE_NAME: agriculturedev/cut-dana-platform-backend
 
 jobs:
   build-and-push-image:
