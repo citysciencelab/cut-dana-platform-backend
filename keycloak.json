@@ -1,0 +1,6 @@
+{
+  "realm": "elie-dana",
+  "auth-server-url": "https://keycloak.jorenv.eu/realms/elie-dana/protocol/openid-connect/auth",
+  "ssl-required": "external",
+  "resource": "elie-dana-client"
+}

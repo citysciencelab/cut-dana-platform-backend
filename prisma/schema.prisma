@@ -127,20 +127,21 @@ model Story {
   title         String
   description   String
   author        String
-  storyInterval Int
-  titleImage    File      @relation(fields: [titleImageId], references: [id])
-  titleImageId  Int // relation for file
-  displayType   String // maybe enum?
+  storyInterval Int       @default(10000)
+  titleImage    File?     @relation(fields: [titleImageId], references: [id])
+  titleImageId  Int? // relation for file
+  displayType   String? // maybe enum?
   chapters      Chapter[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  publishedAt DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
   owner       String // user Id from keycloak
-  private     Boolean  @default(false)
+  private     Boolean   @default(false)
   sharedWith  String[] // user Ids from keycloak
-  featured    Boolean
-  views       Int
+  featured    Boolean   @default(false)
+  views       Int       @default(0)
+  isDraft     Boolean   @default(true)
 }
 
 model KeycloakSetup {

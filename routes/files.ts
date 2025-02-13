@@ -1,4 +1,4 @@
-﻿import express, {Request, Response, Router} from "express";
+﻿import express, {type Request, type Response, Router} from "express";
 import {filesUpload, signUrl} from "../utils/minio.ts";
 import {PrismaClient} from "@prisma/client";
 
