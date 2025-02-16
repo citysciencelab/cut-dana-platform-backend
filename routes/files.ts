@@ -13,8 +13,6 @@ filesRouter.get('/*', async (req: Request, res: Response) => {
     const filename = pathArray.pop(); // Get the last item as the filename
     const context = pathArray.join('/'); // Join the remaining items as the context
 
-    console.log(pathArray, filename, req.params);
-
     const data = await prismaClient.file.findFirst({
         where: {
             fileContext: context,
