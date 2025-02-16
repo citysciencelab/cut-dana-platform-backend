@@ -4,6 +4,7 @@ import fileRoutes from "./routes/files";
 import authRouter from "./routes/login.ts";
 import stepRouter from "./routes/step.ts";
 import storyRouter from "./routes/story.ts";
+import meRouter from "./routes/me.ts";
 
 const app = express();
 const port = 8000;
@@ -15,6 +16,7 @@ app.use("/files", fileRoutes);
 app.use("/auth", authRouter);
 app.use("/steps", stepRouter);
 app.use("/stories", storyRouter);
+app.use("/me", meRouter);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");
