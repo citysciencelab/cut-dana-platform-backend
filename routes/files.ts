@@ -7,8 +7,13 @@ const prismaClient = new PrismaClient();
 
 const filesRouter = Router()
 
-filesRouter.get('/:context/:filename', async (req: Request, res: Response) => {
-    const {context, filename} = req.params;
+filesRouter.get('/*', async (req: Request, res: Response) => {
+
+    const pathArray = req.params[0].split('/'); // Split the remaining path into an array
+    const filename = pathArray.pop(); // Get the last item as the filename
+    const context = pathArray.join('/'); // Join the remaining items as the context
+
+    console.log(pathArray, filename, req.params);
 
     const data = await prismaClient.file.findFirst({
         where: {
@@ -40,8 +45,6 @@ filesRouter.post('/:context', filesUpload.single('files'), async (req: Request, 
         providerMetaData: JSON.stringify(minioMetaData),
     }
 
-    console.log(file);
-
     let newFile;
 
     try {
@@ -56,7 +59,6 @@ filesRouter.post('/:context', filesUpload.single('files'), async (req: Request, 
     }
 
     return res.status(201).send(newFile);
-
 });
 
 export default filesRouter;
