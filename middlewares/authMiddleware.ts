@@ -1,13 +1,14 @@
 import { type Request, type Response, type NextFunction } from "express";
 
 const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.body);
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).send("Unauthorized: No token provided");
     }
 
-    const introspectionUrl = `https://keycloak.datanarrator.city/realms/elie-dana/protocol/openid-connect/token/introspect`;
+    const introspectionUrl = `https://keycloak.jorenv.eu/realms/elie-dana/protocol/openid-connect/token/introspect`;
 
     const token = authHeader.split(" ")[1];
 
@@ -19,7 +20,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
             },
             body: new URLSearchParams({
                 client_id: "elie-dana-backend",
-                client_secret: "xuIy9uNNT9ITiLnvfQhiLXFhmYlQkhQZ",
+                client_secret: "RIkbaqr4BbOot1hPmNGv6Fbn6slriIFM",
                 token: token
             })
         });

@@ -1,8 +1,6 @@
 import express, {Router, type Request, type Response} from "express";
-import {PrismaClient, type Story} from "@prisma/client";
-import type {CreateStoryBody} from "./Story/CreateStory/createStoryBody.ts";
-import authMiddleware, {bareboneAuthMiddleware} from "../middlewares/authMiddleware.ts";
-import stepRouter from "./step.ts";
+import {PrismaClient} from "@prisma/client";
+import authMiddleware from "../middlewares/authMiddleware.ts";
 import {filesUpload} from "../utils/minio.ts";
 
 const prismaClient = new PrismaClient();
@@ -31,7 +29,10 @@ storyRouter.get("/:id", async (req: Request, res: Response) => {
 })
 
 storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
+    console.log("log")
+    console.log(req.body);
     const {user, ...requestBody} = req.body;
+
 
     const storyData = {
         ...requestBody,
@@ -47,13 +48,13 @@ storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
 })
 
 storyRouter.post("/:id/cover", filesUpload.single('files'), async (req: Request, res: Response) => {
-    const minioMetaData = req.file;
+    const minioMetaData = req.file!;
 
     const file = {
         fileContext: `stories/${req.params.id}`,
         filename: minioMetaData.originalname,
         mimetype: minioMetaData.mimetype,
-        bucket: minioMetaData.bucket,
+        bucket: minioMetaData.bucket!,
         encoding: minioMetaData.encoding,
         key: minioMetaData.filename,
         provider: 'minio',
