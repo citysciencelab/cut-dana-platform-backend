@@ -1,31 +1,18 @@
 import { Router, type Request, type Response } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../middlewares/authMiddleware.ts";
 import { filesUpload } from "../utils/minio.ts";
-import type { DefaultArgs } from "@prisma/client/runtime/library";
 
 const prismaClient = new PrismaClient();
 
-/**
- * Defines routes for managing stories, including creating, retrieving, updating, and uploading cover images.
- *
- * - GET "/" retrieves all stories with their title images and chapters.
- * - GET "/:storyId" retrieves a specific story by ID, including its title image and chapters.
- * - POST "/:storyId" update a specific story by ID.
- * - POST "/" creates a new story with the authenticated user's ID as the author and owner.
- * - POST "/draft" creates a draft story with empty title and description for the authenticated user.
- * - POST "/:storyId/cover" uploads a cover image for a story using MinIO for storage.
- * - GET "/:storyId/chapter" retrieves all chapters for a specific story.
- * - POST "/:storyId/chapter" creates or updates a chapter for a specific story.
- * - POST "/:chapterId/step" creates or updates a step within a chapter.
- * - GET "/:chapterId/step" retrieves all steps for a specific chapter.
- * - PUT "/:storyId" updates an existing story with new data.
- *
- */
-
 const storyRouter = Router()
 
+// TODO: auth checks
+
+//#region Story
+// get all stories
 storyRouter.get("/", async (req: Request, res: Response) => {
+    // TODO: filter on draft boolean, if the use calling this has stories in draft, do add those
     const stories = await prismaClient.story.findMany({
         include: {
             titleImage: true,
@@ -39,6 +26,7 @@ storyRouter.get("/", async (req: Request, res: Response) => {
     res.status(200).json(stories)
 })
 
+// get story by id
 storyRouter.get("/:storyId", async (req: Request, res: Response) => {
     const story = await prismaClient.story.findUniqueOrThrow({
         where: {
@@ -56,22 +44,7 @@ storyRouter.get("/:storyId", async (req: Request, res: Response) => {
     res.status(200).json(story)
 })
 
-storyRouter.post("/:storyId", authMiddleware, async (req: Request, res: Response) => {
-    const {user, ...requestBody} = req.body;
-
-    const storyData = {
-        ...requestBody,
-        author: user.id,
-        owner: user.id
-    }
-
-    const newStory = await prismaClient.story.create({
-        data: storyData
-    })
-
-    res.status(201).json(newStory.id)
-})
-
+// create new story
 storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
 
@@ -88,6 +61,7 @@ storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
     res.status(201).json(newStory.id)
 })
 
+// create new story draft
 storyRouter.post("/draft", authMiddleware, async (req: Request, res: Response) => {
     const {user} = req.body;
 
@@ -102,11 +76,26 @@ storyRouter.post("/draft", authMiddleware, async (req: Request, res: Response) =
         data: storyData
     })
 
-    console.log(newStory)
-
     res.status(201).json(newStory.id)
 })
 
+// update story
+storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response) => {
+    const {user, ...requestBody} = req.body;
+
+    const editedStory = await prismaClient.story.update({
+        where: {
+            id: parseInt(req.params.storyId)
+        },
+        data: {
+            ...requestBody
+        }
+    })
+
+    res.status(200).json(editedStory)
+})
+
+// update story cover
 storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'), async (req: Request, res: Response) => {
     const minioMetaData = req.file;
 
@@ -162,7 +151,10 @@ storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'),
 
     return res.status(201).json(newFile);
 })
+//#endregion
 
+//#region Chapter
+// get all chapters for a story
 storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
     const storyId = parseInt(req.params.storyId);
@@ -176,6 +168,7 @@ storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: R
     res.status(200).json(chapters);
 })
 
+// add a chapter to a story
 storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
     const storyId = parseInt(req.params.storyId);
@@ -212,6 +205,37 @@ storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: 
     res.status(200).json(newlyCreatedChapterId);
 })
 
+// delete a chapter
+storyRouter.delete("/:chapterId", authMiddleware, async (req: Request, res: Response) => {
+    const {user, ...requestBody} = req.body;
+    const chapterId = parseInt(req.params.chapterId);
+
+    await prismaClient.chapter.delete({
+        where: {
+            id: chapterId,
+        }
+    })
+    res.status(200).json(steps);
+})
+//#endregion
+
+//#region Step
+// get all steps for a chapter
+storyRouter.get("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+    console.log("Step endpoint")
+    const {user, ...requestBody} = req.body;
+    const chapterId = parseInt(req.params.chapterId);
+
+    const steps = await prismaClient.storyStep.findMany({
+        where: {
+            chapterId: chapterId
+        }
+    })
+
+    res.status(200).json(steps);
+})
+
+// add a step to a chapter
 storyRouter.post("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
@@ -262,35 +286,7 @@ storyRouter.post("/:chapterId/step", authMiddleware, async (req: Request, res: R
 
     res.status(200).json();
 })
-
-storyRouter.get("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
-    console.log("Step endpoint")
-    const {user, ...requestBody} = req.body;
-    const chapterId = parseInt(req.params.chapterId);
-
-    const steps = await prismaClient.storyStep.findMany({
-        where: {
-            chapterId: chapterId
-        }
-    })
-
-    res.status(200).json(steps);
-})
-
-storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response) => {
-    const {user, ...requestBody} = req.body;
-
-    const editedStory = await prismaClient.story.update({
-        where: {
-            id: parseInt(req.params.storyId)
-        },
-        data: {
-            ...requestBody
-        }
-    })
-
-    res.status(200).json(editedStory)
-})
+//#endregion
 
 export default storyRouter;
 
