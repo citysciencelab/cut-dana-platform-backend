@@ -1,7 +1,7 @@
-import {Router, type Request, type Response} from "express";
-import {PrismaClient} from "@prisma/client";
+import { Router, type Request, type Response } from "express";
+import { Prisma, PrismaClient } from "@prisma/client";
 import authMiddleware from "../middlewares/authMiddleware.ts";
-import {filesUpload} from "../utils/minio.ts";
+import { filesUpload } from "../utils/minio.ts";
 
 const prismaClient = new PrismaClient();
 
@@ -11,7 +11,11 @@ storyRouter.get("/", async (req: Request, res: Response) => {
     const stories = await prismaClient.story.findMany({
         include: {
             titleImage: true,
-            chapters: true,
+            chapters: {
+                include: {
+                    StoryStep: true
+                }
+            },
         }
     });
     res.status(200).send(stories)
@@ -24,7 +28,11 @@ storyRouter.get("/:storyId", async (req: Request, res: Response) => {
         },
         include: {
             titleImage: true,
-            chapters: true,
+            chapters: {
+                include: {
+                    StoryStep: true
+                }
+            },
         }
     })
     res.status(200).send(story)
@@ -52,7 +60,7 @@ storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
 storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'), async (req: Request, res: Response) => {
     const minioMetaData = req.file;
 
-    if (minioMetaData == null){
+    if (minioMetaData == null) {
         return res.status(500).json({
             message: "file not found",
             status: 500
@@ -74,7 +82,7 @@ storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'),
     let newFile;
 
     try {
-        newFile = await prismaClient.file.create({data:file});
+        newFile = await prismaClient.file.create({data: file});
     } catch (e: any) {
         res.status(500).json({
             message: e.message,
@@ -103,6 +111,19 @@ storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'),
     }
 
     return res.status(201).send(newFile);
+})
+
+storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
+    const {user, ...requestBody} = req.body;
+    const storyId = parseInt(req.params.storyId);
+
+    const chapters = await prismaClient.chapter.findMany({
+        where: {
+            storyId: storyId
+        }
+    })
+
+    res.status(200).send(chapters);
 })
 
 storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
@@ -176,7 +197,15 @@ storyRouter.post("/:storyId/:chapterId/step", authMiddleware, async (req: Reques
         await prismaClient.storyStep.create({
             data: {
                 ...newStep,
-                chapter: chapter
+                // chapterId: chapterId
+                navigation3D: {
+                    cameraPosition: newStep.navigation3D.cameraPosition,
+                    heading: newStep.navigation3D.heading,
+                    pitch: newStep.navigation3D.pitch
+                },
+                chapter: {
+                    connect: {id: chapterId}
+                }
             }
         })
     }
