@@ -1,5 +1,5 @@
 ### Post new step
-POST http://localhost:8000/stories/{{chapterId}}/step
+POST {{baseUri}}/stories/{{chapterId}}/step
 Content-Type: application/json
 
 {

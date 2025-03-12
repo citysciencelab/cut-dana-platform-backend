@@ -1,4 +1,4 @@
 ### Get chapters for story
-GET http://localhost:8000/stories/{{storyId}}/chapter
+GET {{baseUri}}/stories/{{storyId}}/chapter
 Content-Type: application/json
 ###
