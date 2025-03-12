@@ -21,6 +21,8 @@ app.use(cors())
 app.use(express.json({ limit: "10mb"}))
 app.use(express.urlencoded({ extended: true }));
 
+
+// TODO@JOREN: use asyncHandler in other routers too to make use of the error handler
 app.use("/files", fileRoutes);
 app.use("/auth", authRouter);
 app.use("/steps", stepRouter);

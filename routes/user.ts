@@ -1,18 +1,15 @@
 ﻿import {Router, type Request, type Response} from "express";
 import {PrismaClient} from "@prisma/client";
-import authMiddleware from "../middlewares/authMiddleware.ts";
+import asyncHandler from "../Handlers/asyncHandler.ts";
 
 const prismaClient = new PrismaClient();
-
-
 const userRouter = Router()
 
-userRouter.get('/storyId', async (request, response) => {
+userRouter.get('/storyId', asyncHandler(async (request, response) => {
     const introspectionUrl = `https://keycloak.datanarrator.city/admin/realms/elie-dana/users/${request.params.id}`;
     console.log("GET /users/:id", request.params.id, introspectionUrl);
 
     try {
-
         const url = "https://keycloak.datanarrator.city/realms/elie-dana/protocol/openid-connect/token";
         const params = new URLSearchParams({
             grant_type: "client_credentials",
@@ -40,7 +37,7 @@ userRouter.get('/storyId', async (request, response) => {
         console.error(err);
         return response.status(500).send("Something went wrong");
     }
-})
+}))
 
 export default userRouter;
 

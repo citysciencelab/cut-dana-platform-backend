@@ -1,12 +1,13 @@
 ﻿import express, {Router, type Request, type Response} from "express";
 import {PrismaClient} from "@prisma/client";
+import asyncHandler from "../Handlers/asyncHandler.ts";
 
 const prismaClient = new PrismaClient();
 
 
 const authRouter = Router()
 
-authRouter.get('/login', async (request: Request, response: Response) => {
+authRouter.get('/login', asyncHandler(async (request: Request, response: Response) => {
     const loginConfig = await prismaClient.keycloakSetup.findFirst();
 
     if (!loginConfig) {
@@ -25,9 +26,9 @@ authRouter.get('/login', async (request: Request, response: Response) => {
     const url = `${redirectUrl}?${searchParams.toString()}`;
 
     return response.redirect(url);
-})
+}))
 
-authRouter.post('/auth', async (request: Request, response: Response) => {
+authRouter.post('/auth', asyncHandler(async (request: Request, response: Response) => {
     const loginConfig = await prismaClient.keycloakSetup.findFirst();
 
     if (!loginConfig) {
@@ -46,9 +47,9 @@ authRouter.post('/auth', async (request: Request, response: Response) => {
     const url = `${redirectUrl}?${searchParams.toString()}`;
 
     return response.redirect(url);
-})
+}))
 
-authRouter.get('/config', async (request: Request, response: Response) => {
+authRouter.get('/config', asyncHandler(async (request: Request, response: Response) => {
     const loginConfig = await prismaClient.keycloakSetup.findFirst();
 
     if (!loginConfig) {
@@ -58,7 +59,7 @@ authRouter.get('/config', async (request: Request, response: Response) => {
     return response.json({
         ...loginConfig
     });
-})
+}))
 
 export default authRouter;
 
