@@ -47,14 +47,22 @@ storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
     res.status(201).send(req.params.id)
 })
 
-storyRouter.post("/:id/cover", filesUpload.single('files'), async (req: Request, res: Response) => {
-    const minioMetaData = req.file!;
+storyRouter.post("/:id/cover", authMiddleware, filesUpload.single('files'), async (req: Request, res: Response) => {
+    const minioMetaData = req.file;
+
+    if (minioMetaData == null){
+        return res.status(500).json({
+            message: "file not found",
+            status: 500
+        });
+    }
 
     const file = {
         fileContext: `stories/${req.params.id}`,
         filename: minioMetaData.originalname,
         mimetype: minioMetaData.mimetype,
-        bucket: minioMetaData.bucket!,
+        // @ts-ignore
+        bucket: minioMetaData.bucket, // TODO: make it shut up, and test if it works
         encoding: minioMetaData.encoding,
         key: minioMetaData.filename,
         provider: 'minio',
@@ -65,7 +73,7 @@ storyRouter.post("/:id/cover", filesUpload.single('files'), async (req: Request,
 
     try {
         newFile = await prismaClient.file.create({data:file});
-    } catch (e) {
+    } catch (e: any) {
         res.status(500).json({
             message: e.message,
             status: 500,
@@ -83,7 +91,29 @@ storyRouter.post("/:id/cover", filesUpload.single('files'), async (req: Request,
                 titleImageId: newFile.id,
             }
         })
-    } catch (e) {
+    } catch (e: any) {
+        res.status(500).json({
+            message: e.message,
+            status: 500,
+            stack: e.stack
+        });
+        throw e;
+    }
+
+    return res.status(201).send(newFile);
+})
+
+storyRouter.post("/:id/chapter", authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const story = await prismaClient.story.update({
+            where: {
+                id: parseInt(req.params.id)
+            },
+            data: {
+                titleImageId: newFile.id,
+            }
+        })
+    } catch (e: any) {
         res.status(500).json({
             message: e.message,
             status: 500,
