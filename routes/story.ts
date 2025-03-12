@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../middlewares/authMiddleware.ts";
 import { filesUpload } from "../utils/minio.ts";
+import asyncHandler from "../Handlers/asyncHandler.ts";
 
 const prismaClient = new PrismaClient();
 
@@ -11,7 +12,7 @@ const storyRouter = Router()
 
 //#region Story
 // get all stories
-storyRouter.get("/", async (req: Request, res: Response) => {
+storyRouter.get("/", asyncHandler(async (req: Request, res: Response) => {
     // TODO: filter on draft boolean, if the use calling this has stories in draft, do add those
     const stories = await prismaClient.story.findMany({
         include: {
@@ -24,10 +25,10 @@ storyRouter.get("/", async (req: Request, res: Response) => {
         }
     });
     res.status(200).json(stories)
-})
+}));
 
 // get story by id
-storyRouter.get("/:storyId", async (req: Request, res: Response) => {
+storyRouter.get("/:storyId", asyncHandler(async (req: Request, res: Response) => {
     const story = await prismaClient.story.findUniqueOrThrow({
         where: {
             id: parseInt(req.params.storyId)
@@ -42,10 +43,10 @@ storyRouter.get("/:storyId", async (req: Request, res: Response) => {
         }
     })
     res.status(200).json(story)
-})
+}));
 
 // create new story
-storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
 
     const storyData = {
@@ -59,10 +60,10 @@ storyRouter.post("/", authMiddleware, async (req: Request, res: Response) => {
     })
 
     res.status(201).json(newStory.id)
-})
+}));
 
 // create new story draft
-storyRouter.post("/draft", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/draft", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user} = req.body;
 
     const storyData = {
@@ -77,10 +78,10 @@ storyRouter.post("/draft", authMiddleware, async (req: Request, res: Response) =
     })
 
     res.status(201).json(newStory.id)
-})
+}));
 
 // update story
-storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.put("/:storyId", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
 
     const editedStory = await prismaClient.story.update({
@@ -93,10 +94,10 @@ storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response)
     })
 
     res.status(200).json(editedStory)
-})
+}));
 
 // delete story
-storyRouter.delete("/:storyId", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.delete("/:storyId", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user} = req.body;
     const storyId = parseInt(req.params.storyId);
 
@@ -110,10 +111,10 @@ storyRouter.delete("/:storyId", authMiddleware, async (req: Request, res: Respon
     } catch (e) {
         res.status(500).json(e)
     }
-})
+}));
 
 // update story cover
-storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'), async (req: Request, res: Response) => {
+storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'), asyncHandler(async (req: Request, res: Response) => {
     const minioMetaData = req.file;
 
     if (minioMetaData == null) {
@@ -167,12 +168,12 @@ storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'),
     }
 
     return res.status(201).json(newFile);
-})
+}));
 //#endregion
 
 //#region Chapter
 // get all chapters for a story
-storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.get("/:storyId/chapter", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
     const storyId = parseInt(req.params.storyId);
 
@@ -183,10 +184,10 @@ storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: R
     })
 
     res.status(200).json(chapters);
-})
+}));
 
 // upsert a chapter for a story
-storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/:storyId/chapter", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
     const storyId = parseInt(req.params.storyId);
 
@@ -217,29 +218,26 @@ storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: 
         }))
         res.status(200).json(newlyCreatedChapter.id);
     }
-})
+}));
 
 // delete a chapter
-storyRouter.delete("/chapter/:chapterId", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.delete("/chapter/:chapterId", authMiddleware, asyncHandler( async (req: Request, res: Response) => {
     const {user} = req.body;
     const chapterId = parseInt(req.params.chapterId);
 
-    try {
-        await prismaClient.chapter.delete({
-            where: {
-                id: chapterId,
-            }
-        })
-        res.status(200).json();
-    } catch (e) {
-        res.status(500).json(e)
-    }
-})
+    await prismaClient.chapter.delete({
+        where: {
+            id: chapterId,
+        }
+    })
+    res.status(200).json();
+
+}));
 //#endregion
 
 //#region Step
 // get all steps for a chapter
-storyRouter.get("/chapter/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.get("/chapter/:chapterId/step", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
     const chapterId = parseInt(req.params.chapterId);
@@ -251,10 +249,10 @@ storyRouter.get("/chapter/:chapterId/step", authMiddleware, async (req: Request,
     })
 
     res.status(200).json(steps);
-})
+}));
 
 // add a step to a chapter
-storyRouter.post("/chapter/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/chapter/:chapterId/step", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
     const chapterId = parseInt(req.params.chapterId);
@@ -303,24 +301,20 @@ storyRouter.post("/chapter/:chapterId/step", authMiddleware, async (req: Request
     }
 
     res.status(200).json();
-})
+}));
 
 // delete a step from a chapter
-storyRouter.delete("/step/:stepId", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.delete("/step/:stepId", authMiddleware, asyncHandler(async (req: Request, res: Response) => {
     const {user} = req.body;
     const stepId = parseInt(req.params.stepId);
 
-    try {
-        await prismaClient.storyStep.delete({
-            where: {
-                id: stepId,
-            }
-        })
-        res.status(200).json();
-    } catch (e) {
-        res.status(500).json(e)
-    }
-})
+    await prismaClient.storyStep.delete({
+        where: {
+            id: stepId,
+        }
+    })
+    res.status(200).json();
+}));
 //#endregion
 
 export default storyRouter;

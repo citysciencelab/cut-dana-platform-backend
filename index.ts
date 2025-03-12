@@ -6,6 +6,7 @@ import stepRouter from "./routes/step.ts";
 import storyRouter from "./routes/story.ts";
 import meRouter from "./routes/me.ts";
 import userRouter from "./routes/user.ts";
+import errorHandler from "./middlewares/errorHandlingMiddleware.ts";
 
 const app = express();
 const port = 8000;
@@ -26,6 +27,8 @@ app.use("/steps", stepRouter);
 app.use("/stories", storyRouter);
 app.use("/me", meRouter);
 app.use("/users", userRouter);
+
+app.use(errorHandler);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");
