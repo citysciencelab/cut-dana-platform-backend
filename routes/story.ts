@@ -185,16 +185,14 @@ storyRouter.get("/:storyId/chapter", authMiddleware, async (req: Request, res: R
     res.status(200).json(chapters);
 })
 
-// add a chapter to a story
+// upsert a chapter for a story
 storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: Response) => {
     const {user, ...requestBody} = req.body;
     const storyId = parseInt(req.params.storyId);
 
     const newChapter = {...requestBody}
-    let newlyCreatedChapterId;
 
     if (newChapter.id) {
-        // Update existing chapter
         await prismaClient.chapter.upsert({
             where: {
                 id: newChapter.id,
@@ -209,17 +207,16 @@ storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: 
                 storyId: storyId
             }
         })
+        res.status(200).json(newChapter.id);
     } else {
-        // Create a new chapter if no `id`
-        newlyCreatedChapterId = (await prismaClient.chapter.create({
+        const newlyCreatedChapter = (await prismaClient.chapter.create({
             data: {
                 ...newChapter,
                 storyId: storyId
             }
-        })).id
+        }))
+        res.status(200).json(newlyCreatedChapter.id);
     }
-
-    res.status(200).json(newlyCreatedChapterId);
 })
 
 // delete a chapter
