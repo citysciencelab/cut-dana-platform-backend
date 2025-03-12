@@ -1,14 +1,19 @@
 import { type Request, type Response, type NextFunction } from "express";
 
 const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.body);
+    if (process.env.USE_AUTHENTICATION == "false") {
+        req.body.user = createDevUser();
+        next();
+        return;
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).send("Unauthorized: No token provided");
     }
 
-    const introspectionUrl = `https://keycloak.jorenv.eu/realms/elie-dana/protocol/openid-connect/token/introspect`;
+    const introspectionUrl = process.env.KEYCLOAK_URL!;
 
     const token = authHeader.split(" ")[1];
 
@@ -19,8 +24,8 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
                 "Content-Type": "application/x-www-form-urlencoded"
             },
             body: new URLSearchParams({
-                client_id: "elie-dana-backend",
-                client_secret: "RIkbaqr4BbOot1hPmNGv6Fbn6slriIFM",
+                client_id: process.env.KEYCLOAK_CLIENT_ID!,
+                client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
                 token: token
             })
         });
@@ -37,7 +42,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
             username: data.preferred_username,
             name: data.name,
             scope: data.scope,
-            roles: data.resource_access["elie-dana-client"].roles
+            roles: data.resource_access[process.env.KEYCLOAK_CLIENT_ID!].roles
         };
         next();
     } catch (err) {
@@ -46,6 +51,17 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
     }
 };
 
+const createDevUser = () => {
+    return {
+        id: "69",
+        email: "testuser@example.com",
+        username: "testuser",
+        name: "testuser",
+        scope: "testuser",
+        roles: "all the roles"
+    }
+}
+
 export const bareboneAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
@@ -53,7 +69,7 @@ export const bareboneAuthMiddleware = async (req: Request, res: Response, next: 
         return res.status(401).send("Unauthorized: No token provided");
     }
 
-    const introspectionUrl = `https://keycloak.datanarrator.city/realms/elie-dana/protocol/openid-connect/token/introspect`;
+    const introspectionUrl = process.env.KEYCLOAK_URL!;
 
     const token = authHeader.split(" ")[1];
 
@@ -64,8 +80,8 @@ export const bareboneAuthMiddleware = async (req: Request, res: Response, next: 
                 "Content-Type": "application/x-www-form-urlencoded"
             },
             body: new URLSearchParams({
-                client_id: "elie-dana-backend",
-                client_secret: "xuIy9uNNT9ITiLnvfQhiLXFhmYlQkhQZ",
+                client_id: process.env.KEYCLOAK_CLIENT_ID!,
+                client_secret: process.env.KEYCLOAK_CLIENT_SECRET!,
                 token: token
             })
         });

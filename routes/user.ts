@@ -7,7 +7,7 @@ const prismaClient = new PrismaClient();
 
 const userRouter = Router()
 
-userRouter.get('/:id', async (request, response) => {
+userRouter.get('/storyId', async (request, response) => {
     const introspectionUrl = `https://keycloak.datanarrator.city/admin/realms/elie-dana/users/${request.params.id}`;
     console.log("GET /users/:id", request.params.id, introspectionUrl);
 

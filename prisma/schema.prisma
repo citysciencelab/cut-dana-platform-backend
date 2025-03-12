@@ -28,14 +28,6 @@ model Chapter {
   StoryStep StoryStep[]
 }
 
-model Navigation3D {
-  id             Int         @id @default(autoincrement())
-  cameraPosition Float[]
-  heading        Float
-  pitch          Float
-  step           StoryStep[]
-}
-
 model Datasource {
   id     Int       @id @default(autoincrement())
   step   StoryStep @relation(fields: [stepId], references: [id])
@@ -100,8 +92,7 @@ model StoryStep {
   zoomLevel         Int
   interactionAddons String[]
   is3D              Boolean
-  navigation3D      Navigation3D  @relation(fields: [navigation3DId], references: [id])
-  navigation3DId    Int
+  navigation3D      Json
   backgroundMapId   String
   datasources       Datasource[]
   wmsLayers         wmsLayer[]

@@ -10,8 +10,15 @@ import userRouter from "./routes/user.ts";
 const app = express();
 const port = 8000;
 
+if (process.env.KEYCLOAK_URL == null || process.env.KEYCLOAK_URL == ""
+    || process.env.KEYCLOAK_CLIENT_ID == null || process.env.KEYCLOAK_CLIENT_ID == ""
+    || process.env.KEYCLOAK_CLIENT_SECRET == null || process.env.KEYCLOAK_CLIENT_SECRET == "") {
+    throw new Error("keycloak env vars not set");
+}
+
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: "10mb"}))
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/files", fileRoutes);
 app.use("/auth", authRouter);
