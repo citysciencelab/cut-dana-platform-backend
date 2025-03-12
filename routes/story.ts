@@ -95,6 +95,23 @@ storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response)
     res.status(200).json(editedStory)
 })
 
+// delete story
+storyRouter.delete("/:storyId", authMiddleware, async (req: Request, res: Response) => {
+    const {user} = req.body;
+    const storyId = parseInt(req.params.storyId);
+
+    try {
+        await prismaClient.story.delete({
+            where: {
+                id: storyId,
+            }
+        })
+        res.status(200).json();
+    } catch (e) {
+        res.status(500).json(e)
+    }
+})
+
 // update story cover
 storyRouter.post("/:storyId/cover", authMiddleware, filesUpload.single('files'), async (req: Request, res: Response) => {
     const minioMetaData = req.file;
