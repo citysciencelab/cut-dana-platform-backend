@@ -1,0 +1,4 @@
+### Get steps for specific chapter id
+GET http://localhost:8000/stories/{{chapterId}}/step
+Content-Type: application/json
+###

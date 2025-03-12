@@ -161,10 +161,9 @@ storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: 
     res.status(200).send();
 })
 
-storyRouter.post("/:storyId/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
-    const storyId = parseInt(req.params.storyId);
     const chapterId = parseInt(req.params.chapterId);
 
     const newStep = {...requestBody}
@@ -211,6 +210,20 @@ storyRouter.post("/:storyId/:chapterId/step", authMiddleware, async (req: Reques
     }
 
     res.status(200).send();
+})
+
+storyRouter.get("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+    console.log("Step endpoint")
+    const {user, ...requestBody} = req.body;
+    const chapterId = parseInt(req.params.chapterId);
+
+    const steps = await prismaClient.storyStep.findMany({
+        where: {
+            chapterId: chapterId
+        }
+    })
+
+    res.status(200).send(steps);
 })
 
 storyRouter.put("/:storyId", authMiddleware, async (req: Request, res: Response) => {
