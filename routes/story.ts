@@ -206,22 +206,26 @@ storyRouter.post("/:storyId/chapter", authMiddleware, async (req: Request, res: 
 })
 
 // delete a chapter
-storyRouter.delete("/:chapterId", authMiddleware, async (req: Request, res: Response) => {
-    const {user, ...requestBody} = req.body;
+storyRouter.delete("/chapter/:chapterId", authMiddleware, async (req: Request, res: Response) => {
+    const {user} = req.body;
     const chapterId = parseInt(req.params.chapterId);
 
-    await prismaClient.chapter.delete({
-        where: {
-            id: chapterId,
-        }
-    })
-    res.status(200).json(steps);
+    try {
+        await prismaClient.chapter.delete({
+            where: {
+                id: chapterId,
+            }
+        })
+        res.status(200).json();
+    } catch (e) {
+        res.status(500).json(e)
+    }
 })
 //#endregion
 
 //#region Step
 // get all steps for a chapter
-storyRouter.get("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.get("/chapter/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
     const chapterId = parseInt(req.params.chapterId);
@@ -236,7 +240,7 @@ storyRouter.get("/:chapterId/step", authMiddleware, async (req: Request, res: Re
 })
 
 // add a step to a chapter
-storyRouter.post("/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
+storyRouter.post("/chapter/:chapterId/step", authMiddleware, async (req: Request, res: Response) => {
     console.log("Step endpoint")
     const {user, ...requestBody} = req.body;
     const chapterId = parseInt(req.params.chapterId);
@@ -285,6 +289,23 @@ storyRouter.post("/:chapterId/step", authMiddleware, async (req: Request, res: R
     }
 
     res.status(200).json();
+})
+
+// delete a step from a chapter
+storyRouter.delete("/step/:stepId", authMiddleware, async (req: Request, res: Response) => {
+    const {user} = req.body;
+    const stepId = parseInt(req.params.stepId);
+
+    try {
+        await prismaClient.storyStep.delete({
+            where: {
+                id: stepId,
+            }
+        })
+        res.status(200).json();
+    } catch (e) {
+        res.status(500).json(e)
+    }
 })
 //#endregion
 

@@ -42,7 +42,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
             username: data.preferred_username,
             name: data.name,
             scope: data.scope,
-            roles: data.resource_access[process.env.KEYCLOAK_CLIENT_ID!]?.roles
+            roles: data.resource_access[process.env.KEYCLOAK_FRONTEND_CLIENT_ID!]?.roles
         };
         next();
     } catch (err) {

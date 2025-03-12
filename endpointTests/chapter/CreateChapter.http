@@ -1,0 +1,10 @@
+### Create draft story
+POST {{baseUri}}/stories/4/chapter
+Content-Type: application/json
+
+{
+    "sequence": 1,
+    "name": "chapter name"
+}
+###
+
