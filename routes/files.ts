@@ -32,6 +32,13 @@ filesRouter.get('/*', asyncHandler(async (req: Request, res: Response) => {
 filesRouter.post('/:context', filesUpload.single('files'), asyncHandler(async (req: Request, res: Response) => {
     const minioMetaData = req.file;
 
+    if (!minioMetaData) {
+        return res.status(500).json({
+            message: "file not found",
+            status: 500,
+        });
+    }
+
     const file = {
         fileContext: req.params.context ?? "",
         filename: minioMetaData.originalname,
