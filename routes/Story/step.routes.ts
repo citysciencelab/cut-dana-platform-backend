@@ -31,7 +31,9 @@ stepRouter.post(
   "/:storyId/chapter/:chapterId/step",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user, ...stepData } = req.body;
+    const user = req.user!;
+    const stepData = req.body;
+
     const storyId = parseInt(req.params.storyId, 10);
     const chapterId = parseInt(req.params.chapterId, 10);
 
@@ -81,7 +83,7 @@ stepRouter.delete(
   "/:storyId/chapter/:chapterId/step/:stepId",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
     const stepId = parseInt(req.params.stepId, 10);
 

@@ -31,7 +31,8 @@ chapterRouter.post(
   "/:storyId/chapter",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user, ...chapterData } = req.body;
+    const user = req.user!;
+    const chapterData = req.body;
     const storyId = parseInt(req.params.storyId, 10);
 
     if (!await userOwnsStory(storyId, user.id)) {
@@ -76,7 +77,7 @@ chapterRouter.delete(
   "/:storyId/chapter/:chapterId",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
     const chapterId = parseInt(req.params.chapterId, 10);
 
