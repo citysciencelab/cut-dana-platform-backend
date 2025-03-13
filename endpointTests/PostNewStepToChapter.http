@@ -1,5 +1,5 @@
 ### Post new step
-POST {{baseUri}}/stories/{{chapterId}}/step
+POST {{baseUri}}/stories/24/chapter/5/step
 Content-Type: application/json
 
 {
@@ -19,4 +19,10 @@ Content-Type: application/json
         "pitch": 0.0
     }
 }
+###
+
+
+### Get chapter steps
+GET {{baseUri}}/stories/24/chapter/5/step
+Content-Type: application/json
 ###

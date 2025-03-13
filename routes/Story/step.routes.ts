@@ -14,6 +14,7 @@ stepRouter.get(
   "/:storyId/chapter/:chapterId/step",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
+    console.log("get?")
     const chapterId = parseInt(req.params.chapterId, 10);
 
     const steps = await prismaClient.storyStep.findMany({
@@ -31,6 +32,7 @@ stepRouter.post(
   "/:storyId/chapter/:chapterId/step",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
+    console.log("post?")
     const { user, ...stepData } = req.body;
     const storyId = parseInt(req.params.storyId, 10);
     const chapterId = parseInt(req.params.chapterId, 10);
