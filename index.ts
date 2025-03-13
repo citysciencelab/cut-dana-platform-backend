@@ -9,6 +9,8 @@ import chapterRouter from "./routes/Story/chapter.routes.ts";
 import storyRouter from "./routes/Story/story.routes.ts";
 import stepRouter from "./routes/Story/step.routes.ts";
 
+import "./extensions/RequestExtension.ts";
+
 const app = express();
 const port = 8000;
 
@@ -41,3 +43,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
     console.log(`Listening on port ${port}...`);
 });
+
+export default app;

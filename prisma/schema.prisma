@@ -23,20 +23,20 @@ model Chapter {
   id        Int         @id @default(autoincrement())
   sequence  Int
   name      String
-  story     Story       @relation(fields: [storyId], references: [id])
+  story     Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
   storyId   Int // relation for step
   StoryStep StoryStep[]
 }
 
 model Datasource {
   id     Int       @id @default(autoincrement())
-  step   StoryStep @relation(fields: [stepId], references: [id])
+  step   StoryStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
   stepId Int
 }
 
 model ThreeDFiles {
   file        File      @relation(fields: [fileId], references: [id])
-  step        StoryStep @relation(fields: [storyStepId], references: [id])
+  step        StoryStep @relation(fields: [storyStepId], references: [id], onDelete: Cascade)
   fileId      Int
   storyStepId Int
 
@@ -81,7 +81,7 @@ model StoryStep {
   id         Int @id @default(autoincrement())
   stepNumber Int
 
-  chapter   Chapter @relation(fields: [chapterId], references: [id])
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   chapterId Int // relation for chapter
 
   stepWidth         Int

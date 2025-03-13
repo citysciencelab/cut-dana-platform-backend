@@ -27,7 +27,7 @@ filesRouter.get('/*', asyncHandler(async (req: Request, res: Response) => {
 
     const signedUrl = await signUrl("get", data.key);
 
-    return res.redirect(signedUrl)
+    return res.redirect(signedUrl.toString())
 }));
 filesRouter.post('/:context', filesUpload.single('files'), asyncHandler(async (req: Request, res: Response) => {
     const minioMetaData = req.file;
@@ -43,7 +43,7 @@ filesRouter.post('/:context', filesUpload.single('files'), asyncHandler(async (r
         fileContext: req.params.context ?? "",
         filename: minioMetaData.originalname,
         mimetype: minioMetaData.mimetype,
-        bucket: minioMetaData.bucket,
+        bucket: process.env.MINIO_BUCKET!,
         encoding: minioMetaData.encoding,
         key: minioMetaData.filename,
         provider: 'minio',

@@ -3,31 +3,87 @@ import { PrismaClient } from "@prisma/client";
 import authMiddleware, { optionalAuthMiddleware } from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
 import { filesUpload } from "../../utils/minio";
-import { OwnedOrPublishedStory, OwnedStory } from "./DbFilters";
+import {OwnedOrPublishedStory, OwnedStory, PublishedStory} from "./DbFilters";
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
 
+const includeAll = {
+  titleImage: true,
+  chapters: { include: { StoryStep: true } }
+}
+
 /**
- * Get all stories, including those owned by the user or publicly available.
+ * Get all stories that are not in a draft state
  */
 storyRouter.get(
   "/",
-  optionalAuthMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
-
     const stories = await prismaClient.story.findMany({
-      where: OwnedOrPublishedStory(user?.id),
-      include: {
-        titleImage: true,
-        chapters: { include: { StoryStep: true } },
-      },
+      where: PublishedStory,
+      include: includeAll,
     });
 
     return res.status(200).json(stories);
   })
 );
+
+/**
+ * Get all stories that are not in a draft state and have featured on true
+ */
+storyRouter.get(
+  "/featured",
+  asyncHandler(async (req: Request, res: Response) => {
+    const story = await prismaClient.story.findMany({
+      where: {
+        ...PublishedStory,
+        featured: true
+      },
+      include: includeAll,
+    });
+
+    return res.status(200).json(story);
+  })
+);
+
+/**
+ * Get all stories that are not in a draft state ordered by views
+ */
+storyRouter.get(
+  "/popular",
+  asyncHandler(async (req: Request, res: Response) => {
+    const story = await prismaClient.story.findMany({
+      where: {
+        ...PublishedStory,
+      },
+      include: includeAll,
+      orderBy: {
+        views: "desc",
+      }
+    });
+
+    return res.status(200).json(story);
+  })
+);
+
+/**
+ * Get all stories that are owned by me, draft or not
+ */
+storyRouter.get(
+  "/mine",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+
+    const story = await prismaClient.story.findMany({
+      where: OwnedStory(user.id),
+      include: includeAll,
+    });
+
+    return res.status(200).json(story);
+  })
+);
+
 
 /**
  * Get a single story by ID, including chapters and steps, if owned or published.
@@ -36,7 +92,7 @@ storyRouter.get(
   "/:storyId",
   optionalAuthMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user;
     const storyId = parseInt(req.params.storyId, 10);
 
     const story = await prismaClient.story.findUniqueOrThrow({
@@ -44,10 +100,7 @@ storyRouter.get(
         id: storyId,
         ...OwnedOrPublishedStory(user?.id),
       },
-      include: {
-        titleImage: true,
-        chapters: { include: { StoryStep: true } },
-      },
+      include: includeAll,
     });
 
     return res.status(200).json(story);
@@ -61,10 +114,10 @@ storyRouter.post(
   "/",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user, ...requestBody } = req.body;
+    const user = req.user!;
 
     const storyData = {
-      ...requestBody,
+      ...req.body,
       author: user.id,
       owner: user.id,
     };
@@ -81,7 +134,7 @@ storyRouter.post(
   "/draft",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user!;
 
     const storyData = {
       title: "",
@@ -102,7 +155,7 @@ storyRouter.put(
   "/:storyId",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user, ...requestBody } = req.body;
+    const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
 
     const editedStory = await prismaClient.story.update({
@@ -110,9 +163,7 @@ storyRouter.put(
         id: storyId,
         ...OwnedStory(user.id),
       },
-      data: {
-        ...requestBody,
-      },
+      data: req.body,
     });
 
     return res.status(200).json(editedStory);
@@ -126,20 +177,16 @@ storyRouter.delete(
   "/:storyId",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
 
-    try {
-      await prismaClient.story.delete({
-        where: {
-          id: storyId,
-          ...OwnedStory(user.id),
-        },
-      });
-      return res.status(200).json();
-    } catch (error) {
-      return res.status(500).json(error);
-    }
+    await prismaClient.story.delete({
+      where: {
+        id: storyId,
+        ...OwnedStory(user.id),
+      },
+    });
+    return res.status(200).json();
   })
 );
 
@@ -151,8 +198,9 @@ storyRouter.post(
   authMiddleware,
   filesUpload.single("files"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { user } = req.body;
+    const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
+
     const minioMetaData = req.file;
 
     if (!minioMetaData) {
@@ -166,44 +214,25 @@ storyRouter.post(
       fileContext: `stories/${storyId}`,
       filename: minioMetaData.originalname,
       mimetype: minioMetaData.mimetype,
-      // @ts-ignore  -- Type definitions for Multer Minio might require an update
-      bucket: minioMetaData.bucket,
+      bucket: process.env.MINIO_BUCKET!,
       encoding: minioMetaData.encoding,
       key: minioMetaData.filename,
       provider: "minio",
       providerMetaData: JSON.stringify(minioMetaData),
     };
 
-    let newFile;
-    try {
-      newFile = await prismaClient.file.create({ data: fileData });
-    } catch (error: any) {
-      res.status(500).json({
-        message: error.message,
-        status: 500,
-        stack: error.stack,
-      });
-      throw error;
-    }
 
-    try {
-      await prismaClient.story.update({
-        where: {
-          id: storyId,
-          ...OwnedStory(user.id),
-        },
-        data: {
-          titleImageId: newFile.id,
-        },
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        message: error.message,
-        status: 500,
-        stack: error.stack,
-      });
-      throw error;
-    }
+    let newFile = await prismaClient.file.create({ data: fileData });
+
+    await prismaClient.story.update({
+      where: {
+        id: storyId,
+        ...OwnedStory(user.id),
+      },
+      data: {
+        titleImageId: newFile.id,
+      },
+    });
 
     return res.status(201).json(newFile);
   })
