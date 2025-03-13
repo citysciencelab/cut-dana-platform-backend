@@ -1,11 +1,9 @@
 ﻿import {Router, type Request, type Response} from "express";
-import {PrismaClient} from "@prisma/client";
 import asyncHandler from "../handlers/asyncHandler.ts";
 
-const prismaClient = new PrismaClient();
 const userRouter = Router()
 
-userRouter.get('/storyId', asyncHandler(async (request, response) => {
+userRouter.get('/storyId', asyncHandler(async (request: Request, response: Response) => {
     const introspectionUrl = `https://keycloak.datanarrator.city/admin/realms/elie-dana/users/${request.params.id}`;
     console.log("GET /users/:id", request.params.id, introspectionUrl);
 

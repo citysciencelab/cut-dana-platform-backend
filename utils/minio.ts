@@ -3,19 +3,20 @@ import {MinioStorageEngine} from "@namatery/multer-minio";
 import multer from "multer";
 
 export const minioClient = new Client({
-    endPoint: process.env.MINIO_ENDPOINT,
-    port: parseInt(process.env.MINIO_PORT) || 9000,
+    endPoint: process.env.MINIO_ENDPOINT!,
+    port: parseInt(process.env.MINIO_PORT!) || 9000,
     useSSL: true,
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
 })
 
 export const filesUpload = multer({
-    storage: new MinioStorageEngine(minioClient, process.env.MINIO_BUCKET,  {
+    storage: new MinioStorageEngine(minioClient, process.env.MINIO_BUCKET!,  {
         object: {
             name: (_, file) => {
                 return `${Date.now()}-${file.originalname}`;
-            }
+            },
+            useOriginalFilename: false
         }
     })
 });

@@ -72,8 +72,9 @@ function buildUserObject(data: any) {
  */
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   if (process.env.USE_AUTHENTICATION === "false") {
-    req.body.user = createDevUser();
-    return next();
+    req.user = createDevUser();
+    next();
+    return;
   }
 
   const token = getTokenFromHeader(req.headers.authorization);
@@ -88,7 +89,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     return;
   }
 
-  req.body.user = buildUserObject(data);
+  req.user = buildUserObject(data);
   next();
 }
 
@@ -115,7 +116,7 @@ export async function bareboneAuthMiddleware(req: Request, res: Response, next: 
  */
 export async function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction) {
   if (process.env.USE_AUTHENTICATION === "false") {
-    req.body.user = createDevUser();
+    req.user = createDevUser();
     return next();
   }
 
@@ -127,7 +128,7 @@ export async function optionalAuthMiddleware(req: Request, res: Response, next: 
 
   const data = await introspectToken(token);
   if (data) {
-    req.body.user = buildUserObject(data);
+    req.user = buildUserObject(data);
   }
 
   // Proceed whether token is valid or not
