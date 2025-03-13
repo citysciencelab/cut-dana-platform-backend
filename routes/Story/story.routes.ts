@@ -70,7 +70,7 @@ storyRouter.get(
  * Get all stories that are owned by me, draft or not
  */
 storyRouter.get(
-  "/mine",
+  "/my",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;

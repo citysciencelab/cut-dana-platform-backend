@@ -1,5 +1,5 @@
 ### Get Stories
-GET {{baseUri}}/stories
+GET {{baseUri}}/stories/all
 Content-Type: application/json
 ###
 
@@ -10,6 +10,11 @@ Content-Type: application/json
 
 ### Get featured stories
 GET {{baseUri}}/stories/featured
+Content-Type: application/json
+###
+
+### Get my stories
+GET {{baseUri}}/stories/my
 Content-Type: application/json
 ###
 
