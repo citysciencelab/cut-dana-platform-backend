@@ -17,7 +17,7 @@ const includeAll = {
  * Get all stories that are not in a draft state
  */
 storyRouter.get(
-  "/",
+  "/all",
   asyncHandler(async (req: Request, res: Response) => {
     const stories = await prismaClient.story.findMany({
       where: PublishedStory,
