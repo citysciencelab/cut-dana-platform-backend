@@ -3,10 +3,11 @@ import cors from "cors";
 import fileRoutes from "./routes/files";
 import authRouter from "./routes/login.ts";
 import stepRouter from "./routes/step.ts";
-import storyRouter from "./routes/story.ts";
 import meRouter from "./routes/me.ts";
 import userRouter from "./routes/user.ts";
 import errorHandler from "./middlewares/errorHandlingMiddleware.ts";
+import chapterRouter from "./routes/Story/chapter.routes.ts";
+import storyRouter from "./routes/Story/story.routes.ts";
 
 const app = express();
 const port = 8000;
@@ -26,7 +27,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/files", fileRoutes);
 app.use("/auth", authRouter);
 app.use("/steps", stepRouter);
-app.use("/stories", storyRouter);
+app.use('/stories', storyRouter);
+app.use('/stories', chapterRouter);
+app.use('/stories', stepRouter);
 app.use("/me", meRouter);
 app.use("/users", userRouter);
 

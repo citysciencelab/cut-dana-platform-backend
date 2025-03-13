@@ -1,7 +1,7 @@
 ﻿import {Router, type Request, type Response} from "express";
 import {PrismaClient} from "@prisma/client";
 import authMiddleware from "../middlewares/authMiddleware.ts";
-import asyncHandler from "../Handlers/asyncHandler.ts";
+import asyncHandler from "../handlers/asyncHandler.ts";
 
 const prismaClient = new PrismaClient();
 

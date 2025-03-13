@@ -1,0 +1,10 @@
+### Get Stories
+GET {{baseUri}}/stories
+Content-Type: application/json
+###
+
+
+### Get specific story
+GET {{baseUri}}/stories/24
+Content-Type: application/json
+###

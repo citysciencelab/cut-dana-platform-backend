@@ -1,5 +1,5 @@
 ### Create draft story
-POST {{baseUri}}/stories/4/chapter
+POST {{baseUri}}/stories/3/chapter
 Content-Type: application/json
 
 {
