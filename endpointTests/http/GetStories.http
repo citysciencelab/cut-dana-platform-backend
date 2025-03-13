@@ -3,8 +3,24 @@ GET {{baseUri}}/stories
 Content-Type: application/json
 ###
 
+### Get popular stories
+GET {{baseUri}}/stories/popular
+Content-Type: application/json
+###
+
+### Get featured stories
+GET {{baseUri}}/stories/featured
+Content-Type: application/json
+###
+
 
 ### Get specific story
-GET {{baseUri}}/stories/24
+GET {{baseUri}}/stories/26
+Content-Type: application/json
+###
+
+
+### Play specific story
+POST {{baseUri}}/stories/26/play
 Content-Type: application/json
 ###
