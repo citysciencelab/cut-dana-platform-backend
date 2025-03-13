@@ -149,6 +149,27 @@ storyRouter.post(
 );
 
 /**
+ * increment story's view counter
+ */
+storyRouter.post(
+  "/:storyId/play",
+  asyncHandler(async (req: Request, res: Response) => {
+    const storyId = parseInt(req.params.storyId, 10);
+
+    const editedStory = await prismaClient.story.update({
+      where: {
+        id: storyId,
+      },
+      data: {
+        views: { increment: 1 }
+      },
+    });
+
+    return res.status(200).json(editedStory);
+  })
+);
+
+/**
  * Update an existing story (must be the owner).
  */
 storyRouter.put(
