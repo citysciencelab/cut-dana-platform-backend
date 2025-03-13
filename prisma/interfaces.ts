@@ -15,14 +15,6 @@ export interface Chapter {
   StoryStep?: StoryStep[];
 }
 
-export interface Navigation3D {
-  id: number;
-  cameraPosition: number[];
-  heading: number;
-  pitch: number;
-  step?: StoryStep[];
-}
-
 export interface Datasource {
   id: number;
   step?: StoryStep;
@@ -83,8 +75,7 @@ export interface StoryStep {
   zoomLevel: number;
   interactionAddons: string[];
   is3D: boolean;
-  navigation3D?: Navigation3D;
-  navigation3DId: number;
+  navigation3D: JsonValue;
   backgroundMapId: string;
   datasources?: Datasource[];
   wmsLayers?: wmsLayer[];

@@ -1,0 +1,4 @@
+### Get chapters for story
+GET {{baseUri}}/stories/24/chapter
+Content-Type: application/json
+###

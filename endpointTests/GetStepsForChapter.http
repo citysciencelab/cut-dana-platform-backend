@@ -1,0 +1,4 @@
+### Get steps for specific chapter id
+GET {{baseUri}}/stories/{{chapterId}}/step
+Content-Type: application/json
+###

@@ -1,0 +1,23 @@
+### Update Story
+PUT {{baseUri}}/stories/24
+Content-Type: application/json
+
+{
+  "title": "Robust 3rd generation solution v2",
+  "description": "6th generation",
+  "author": "69",
+  "storyInterval": 10000,
+  "displayType": null,
+  "createdAt": "2025-03-12T17:11:14.337Z",
+  "updatedAt": "2025-03-12T17:11:14.337Z",
+  "publishedAt": null,
+  "owner": "69",
+  "private": false,
+  "sharedWith": [],
+  "featured": false,
+  "views": 0,
+  "isDraft": true
+}
+###
+
+

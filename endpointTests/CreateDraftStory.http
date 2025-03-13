@@ -1,0 +1,4 @@
+### Create draft story
+POST {{baseUri}}/stories/draft
+Content-Type: application/json
+###
