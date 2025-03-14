@@ -1,16 +1,17 @@
-import { Router, type Request, type Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import authMiddleware, { optionalAuthMiddleware } from "../../middlewares/authMiddleware";
+import {Router, type Request, type Response} from "express";
+import {PrismaClient} from "@prisma/client";
+import authMiddleware, {optionalAuthMiddleware} from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
-import { filesUpload } from "../../utils/minio";
-import {OwnedOrPublishedStory, OwnedStory, PublishedStory} from "./DbFilters";
+import {filesUpload} from "../../utils/minio";
+import {OwnedOrPublishedStory, OwnedStory, PublishedStory } from "./DbFilters";
+import {userIsAdmin} from "../../types/User.ts";
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
 
 const includeAll = {
   titleImage: true,
-  chapters: { include: { StoryStep: true } }
+  chapters: {include: {StoryStep: true}}
 }
 
 /**
@@ -86,7 +87,7 @@ storyRouter.get(
 
 
 /**
- * Get a single story by ID, including chapters and steps, if owned or published.
+ * Get a single story by ID, including chapters and steps, if owned, published or user is admin.
  */
 storyRouter.get(
   "/:storyId",
@@ -95,10 +96,16 @@ storyRouter.get(
     const user = req.user;
     const storyId = parseInt(req.params.storyId, 10);
 
+    let extraCheck = {};
+
+    if (!user || !userIsAdmin(user)) {
+      extraCheck = OwnedOrPublishedStory(user?.id);
+    }
+
     const story = await prismaClient.story.findUniqueOrThrow({
       where: {
         id: storyId,
-        ...OwnedOrPublishedStory(user?.id),
+        ...extraCheck,
       },
       include: includeAll,
     });
@@ -122,7 +129,7 @@ storyRouter.post(
       owner: user.id,
     };
 
-    const newStory = await prismaClient.story.create({ data: storyData });
+    const newStory = await prismaClient.story.create({data: storyData});
     return res.status(201).json(newStory.id);
   })
 );
@@ -143,8 +150,38 @@ storyRouter.post(
       owner: user.id,
     };
 
-    const newStory = await prismaClient.story.create({ data: storyData });
+    const newStory = await prismaClient.story.create({data: storyData});
     return res.status(201).json(newStory.id);
+  })
+);
+
+/**
+ * Create an empty draft story.
+ */
+storyRouter.post(
+  "/:storyId/featured/:boolean",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const storyId = parseInt(req.params.storyId, 10);
+    const boolean = Boolean(JSON.parse(req.params.boolean));
+
+    if (!userIsAdmin(user)) {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to add steps to this story." });
+    }
+
+    const editedStory = await prismaClient.story.update({
+      where: {
+        id: storyId,
+      },
+      data: {
+        featured: boolean
+      },
+    });
+
+    return res.status(201);
   })
 );
 
@@ -161,11 +198,11 @@ storyRouter.post(
         id: storyId,
       },
       data: {
-        views: { increment: 1 }
+        views: {increment: 1}
       },
     });
 
-    return res.status(200).json(editedStory);
+    return res.status(200);
   })
 );
 
@@ -179,10 +216,16 @@ storyRouter.put(
     const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
 
+    let extraCheck = {};
+
+    if (!userIsAdmin(user)) {
+      extraCheck = OwnedStory(user.id);
+    }
+
     const editedStory = await prismaClient.story.update({
       where: {
         id: storyId,
-        ...OwnedStory(user.id),
+        ...extraCheck,
       },
       data: req.body,
     });
@@ -192,7 +235,7 @@ storyRouter.put(
 );
 
 /**
- * Delete a story (must be the owner).
+ * Delete a story (must be the owner or an admin).
  */
 storyRouter.delete(
   "/:storyId",
@@ -201,12 +244,19 @@ storyRouter.delete(
     const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
 
+    let extraCheck = {};
+
+    if (!userIsAdmin(user)) {
+      extraCheck = OwnedStory(user.id);
+    }
+
     await prismaClient.story.delete({
       where: {
         id: storyId,
-        ...OwnedStory(user.id),
+        ...extraCheck
       },
     });
+
     return res.status(200).json();
   })
 );
@@ -243,12 +293,18 @@ storyRouter.post(
     };
 
 
-    let newFile = await prismaClient.file.create({ data: fileData });
+    let newFile = await prismaClient.file.create({data: fileData});
+
+    let extraCheck = {};
+
+    if (!userIsAdmin(user)) {
+      extraCheck = OwnedStory(user.id);
+    }
 
     await prismaClient.story.update({
       where: {
         id: storyId,
-        ...OwnedStory(user.id),
+        ...extraCheck,
       },
       data: {
         titleImageId: newFile.id,

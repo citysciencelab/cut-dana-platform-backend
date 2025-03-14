@@ -2,17 +2,16 @@ import { Router, type Request, type Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
-import {userOwnsStory} from "./DbFilters.ts";
+import {userIsOwnerOrAdmin} from "./DbFilters.ts";
 
 const prismaClient = new PrismaClient();
 const stepRouter = Router();
 
 /**
- * Get all steps for a given chapter (must be authenticated and own the story).
+ * Get all steps for a given chapter.
  */
 stepRouter.get(
   "/:storyId/chapter/:chapterId/step",
-  authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
     const chapterId = parseInt(req.params.chapterId, 10);
 
@@ -37,7 +36,7 @@ stepRouter.post(
     const storyId = parseInt(req.params.storyId, 10);
     const chapterId = parseInt(req.params.chapterId, 10);
 
-    if (!await userOwnsStory(storyId, user.id)) {
+    if (!await userIsOwnerOrAdmin(storyId, user)) {
       return res
         .status(403)
         .json({ error: "You are not authorized to add steps to this story." });
@@ -87,7 +86,7 @@ stepRouter.delete(
     const storyId = parseInt(req.params.storyId, 10);
     const stepId = parseInt(req.params.stepId, 10);
 
-    if (!await userOwnsStory(storyId, user.id)) {
+    if (!await userIsOwnerOrAdmin(storyId, user)) {
       return res
         .status(403)
         .json({ error: "You are not authorized to delete steps from this story." });

@@ -2,12 +2,12 @@ import { Router, type Request, type Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import authMiddleware from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
-import {userOwnsStory} from "./DbFilters.ts";
+import {userIsOwnerOrAdmin } from "./DbFilters.ts";
 
 const prismaClient = new PrismaClient();
 const chapterRouter = Router();
 
-/**
+/** TODO: should the user be authenticated? not strictly necessary IF the project is published?
  * Get all chapters for a given story (must be authenticated).
  */
 chapterRouter.get(
@@ -25,7 +25,7 @@ chapterRouter.get(
 );
 
 /**
- * Create or update a chapter (upsert) for a given story if the user owns it.
+ * Create or update a chapter (upsert) for a given story if the user owns it or is admin.
  */
 chapterRouter.post(
   "/:storyId/chapter",
@@ -35,7 +35,7 @@ chapterRouter.post(
     const chapterData = req.body;
     const storyId = parseInt(req.params.storyId, 10);
 
-    if (!await userOwnsStory(storyId, user.id)) {
+    if (!await userIsOwnerOrAdmin(storyId, user)) {
       return res
         .status(403)
         .json({ error: "You are not authorized to add chapters to this story." });
@@ -81,7 +81,7 @@ chapterRouter.delete(
     const storyId = parseInt(req.params.storyId, 10);
     const chapterId = parseInt(req.params.chapterId, 10);
 
-    if (!await userOwnsStory(storyId, user.id)) {
+    if (!await userIsOwnerOrAdmin(storyId, user)) {
       return res
           .status(403)
           .json({ error: "You are not authorized to delete chapters from this story." });

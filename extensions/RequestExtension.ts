@@ -1,17 +1,11 @@
 ﻿
 import 'express';
+import type {User} from "../types/User.ts";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        email?: string;
-        username?: string;
-        name?: string;
-        scope?: string;
-        roles?: string[] | string;
-      }
+      user?: User
     }
   }
 }
