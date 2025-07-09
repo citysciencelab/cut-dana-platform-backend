@@ -169,7 +169,7 @@ storyRouter.post(
     if (!userIsAdmin(user)) {
       return res
         .status(403)
-        .json({ error: "You are not authorized to add steps to this story." });
+        .json({ error: "You are not authorized to modify this story." });
     }
 
     const editedStory = await prismaClient.story.update({
