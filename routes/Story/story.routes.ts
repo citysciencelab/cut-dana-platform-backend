@@ -331,7 +331,11 @@ storyRouter.post(
                 steps: Array<{
                     title: string;
                     description: string;
-                    mapConfig: { centerCoordinates: number[]; zoomLevel: number };
+                    mapConfig: {
+                        centerCoordinates: number[];
+                        zoomLevel: number;
+                        backgroundMapId: string;
+                    };
                 }>;
             }>;
         };
@@ -357,10 +361,10 @@ storyRouter.post(
                                     html: step.description,
                                     centerCoordinate: step.mapConfig.centerCoordinates,
                                     zoomLevel: step.mapConfig.zoomLevel,
+                                    backgroundMapId: step.mapConfig.backgroundMapId,
                                     interactionAddons: step.interactionAddons ?? [],
                                     is3D: step.is3D ?? false,
                                     navigation3D: step.navigation3D ?? {},
-                                    backgroundMapId: step.backgroundMapId ?? ""
                                 }))
                             }
                         }))
@@ -406,7 +410,8 @@ storyRouter.get(
                                 title: true,
                                 html: true,
                                 centerCoordinate: true,
-                                zoomLevel: true
+                                zoomLevel: true,
+                                backgroundMapId: true,
                             }
                         }
                     }
