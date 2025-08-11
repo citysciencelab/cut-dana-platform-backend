@@ -315,4 +315,124 @@ storyRouter.post(
   })
 );
 
+/** NEW **/
+
+storyRouter.post(
+    "/new",
+    authMiddleware,
+    asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user!;
+
+        const {title, chapters} = req.body as {
+            title: string;
+            chapters: Array<{
+                title: string;
+                sequence: number;
+                steps: Array<{
+                    title: string;
+                    description: string;
+                    mapConfig: {
+                        centerCoordinates: number[];
+                        zoomLevel: number;
+                        backgroundMapId: string;
+                    };
+                }>;
+            }>;
+        };
+
+        const newStory = await prismaClient.$transaction(async (tx) => {
+            return tx.story.create({
+                data: {
+                    title,
+                    description: "",
+                    author: user.id,
+                    owner: user.id,
+                    isDraft: false,
+                    chapters: {
+                        create: chapters.map((chap) => ({
+                            name: chap.title,
+                            sequence: chap.sequence,
+                            StoryStep: {
+                                create: chap.steps.map((step, stepIdx) => ({
+                                    stepNumber: stepIdx + 1,
+                                    stepWidth: step.stepWidth ?? 0,
+                                    visible: step.visible ?? true,
+                                    title: step.title,
+                                    html: step.description,
+                                    centerCoordinate: step.mapConfig.centerCoordinates,
+                                    zoomLevel: step.mapConfig.zoomLevel,
+                                    backgroundMapId: step.mapConfig.backgroundMapId,
+                                    interactionAddons: step.interactionAddons ?? [],
+                                    is3D: step.is3D ?? false,
+                                    navigation3D: step.navigation3D ?? {},
+                                }))
+                            }
+                        }))
+                    }
+                },
+                include: {
+                    chapters: {
+                        include: {StoryStep: true}
+                    }
+                }
+            });
+        });
+
+        return res.status(201).json(newStory);
+    })
+);
+
+storyRouter.get(
+    "/:storyId/play",
+    optionalAuthMiddleware,
+    asyncHandler(async (req: Request, res: Response) => {
+        const storyId = parseInt(req.params.storyId);
+
+        const raw = await prismaClient.story.findFirstOrThrow({
+            where: {
+                id: storyId,
+                isDraft: false
+            },
+            select: {
+                id: true,
+                title: true,
+                chapters: {
+                    orderBy: {sequence: "asc"},
+                    select: {
+                        id: true,
+                        name: true,
+                        sequence: true,
+                        StoryStep: {
+                            orderBy: {stepNumber: "asc"},
+                            select: {
+                                id: true,
+                                stepNumber: true,
+                                title: true,
+                                html: true,
+                                centerCoordinate: true,
+                                zoomLevel: true,
+                                backgroundMapId: true,
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        const story = {
+            id: raw.id,
+            title: raw.title,
+            chapters: raw.chapters.map(chap => {
+                const { StoryStep, ...chapRest } = chap;
+                return {
+                    ...chapRest,
+                    steps: StoryStep
+                };
+            })
+        };
+
+        return res.status(200).json(story);
+    })
+);
+
 export default storyRouter;
