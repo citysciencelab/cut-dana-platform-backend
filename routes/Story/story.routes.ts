@@ -336,6 +336,7 @@ storyRouter.post(
                         zoomLevel: number;
                         backgroundMapId: string;
                     };
+                    informationLayerIds?: string[];
                 }>;
             }>;
         };
@@ -365,6 +366,7 @@ storyRouter.post(
                                     interactionAddons: step.interactionAddons ?? [],
                                     is3D: step.is3D ?? false,
                                     navigation3D: step.navigation3D ?? {},
+                                    informationLayerIds: (step.informationLayerIds ?? []).map(String),
                                 }))
                             }
                         }))
@@ -412,6 +414,7 @@ storyRouter.get(
                                 centerCoordinate: true,
                                 zoomLevel: true,
                                 backgroundMapId: true,
+                                informationLayerIds: true,
                             }
                         }
                     }
