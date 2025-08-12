@@ -385,7 +385,7 @@ storyRouter.post(
 );
 
 storyRouter.get(
-    "/:storyId/play",
+    "/new/:storyId",
     optionalAuthMiddleware,
     asyncHandler(async (req: Request, res: Response) => {
         const storyId = parseInt(req.params.storyId);
@@ -435,6 +435,95 @@ storyRouter.get(
         };
 
         return res.status(200).json(story);
+    })
+);
+
+storyRouter.put(
+    "/new/:storyId",
+    authMiddleware,
+    asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user!;
+        const storyId = parseInt(req.params.storyId, 10);
+        const body = req.body as {
+            title: string;
+            chapters: Array<{
+                title: string;
+                sequence: number;
+                steps: Array<{
+                    title: string;
+                    description: string;
+                    mapConfig: {
+                        centerCoordinates: number[];
+                        zoomLevel: number;
+                        backgroundMapId: string | null;
+                    };
+                    informationLayerIds?: string[];
+                }>;
+            }>;
+        };
+
+        if (!userIsAdmin(user)) {
+            const own = await prismaClient.story.findFirst({
+                where: { id: storyId, owner: user.id },
+                select: { id: true }
+            });
+
+            if (!own) return res.status(403).json({ message: "Forbidden" });
+        }
+
+        await prismaClient.$transaction(async (tx) => {
+            await tx.story.update({
+                where: { id: storyId },
+                data: { title: body.title }
+            });
+
+            const chapterIds = await tx.chapter.findMany({
+                where: { storyId },
+                select: { id: true }
+            });
+
+            if (chapterIds.length) {
+                await tx.storyStep.deleteMany({
+                    where: { chapterId: { in: chapterIds.map(c => c.id) } }
+                });
+                await tx.chapter.deleteMany({ where: { storyId } });
+            }
+
+            for (const chap of body.chapters ?? []) {
+                const newChapter = await tx.chapter.create({
+                    data: {
+                        storyId,
+                        name: chap.title,
+                        sequence: chap.sequence,
+                    },
+                    select: { id: true }
+                });
+
+                const steps = chap.steps ?? [];
+                for (let i = 0; i < steps.length; i++) {
+                    const s = steps[i];
+                    await tx.storyStep.create({
+                        data: {
+                            chapterId: newChapter.id,
+                            stepNumber: i + 1,
+                            stepWidth: 0,
+                            visible: true,
+                            title: s.title,
+                            html: s.description,
+                            centerCoordinate: s.mapConfig.centerCoordinates,
+                            zoomLevel: s.mapConfig.zoomLevel,
+                            backgroundMapId: s.mapConfig.backgroundMapId ?? null,
+                            interactionAddons: [],
+                            is3D: false,
+                            navigation3D: {},
+                            informationLayerIds: (s.informationLayerIds ?? []).map(String),
+                        }
+                    });
+                }
+            }
+        });
+
+        return res.status(200).json({ success: true, message: "Updated story" });
     })
 );
 
