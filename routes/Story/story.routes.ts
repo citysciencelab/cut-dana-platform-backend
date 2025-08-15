@@ -362,7 +362,7 @@ storyRouter.post(
                                     html: step.description,
                                     centerCoordinate: step.mapConfig.centerCoordinates,
                                     zoomLevel: step.mapConfig.zoomLevel,
-                                    backgroundMapId: step.mapConfig.backgroundMapId,
+                                    backgroundMapId: step.mapConfig.backgroundMapId ?? "",
                                     interactionAddons: step.interactionAddons ?? [],
                                     is3D: step.is3D ?? false,
                                     navigation3D: step.navigation3D ?? {},
@@ -398,6 +398,7 @@ storyRouter.get(
             select: {
                 id: true,
                 title: true,
+                titleImage: true,
                 chapters: {
                     orderBy: {sequence: "asc"},
                     select: {
@@ -425,6 +426,7 @@ storyRouter.get(
         const story = {
             id: raw.id,
             title: raw.title,
+            titleImage: raw.titleImage,
             chapters: raw.chapters.map(chap => {
                 const { StoryStep, ...chapRest } = chap;
                 return {
@@ -512,7 +514,7 @@ storyRouter.put(
                             html: s.description,
                             centerCoordinate: s.mapConfig.centerCoordinates,
                             zoomLevel: s.mapConfig.zoomLevel,
-                            backgroundMapId: s.mapConfig.backgroundMapId ?? null,
+                            backgroundMapId: s.mapConfig.backgroundMapId ?? "",
                             interactionAddons: [],
                             is3D: false,
                             navigation3D: {},
