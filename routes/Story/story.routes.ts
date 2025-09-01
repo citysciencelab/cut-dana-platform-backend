@@ -156,32 +156,31 @@ storyRouter.post(
 );
 
 /**
- * Create an empty draft story.
+ * Toggle 'featured' flag (admin only)
  */
 storyRouter.post(
   "/:storyId/featured/:boolean",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
-    const storyId = parseInt(req.params.storyId, 10);
-    const boolean = Boolean(JSON.parse(req.params.boolean));
+    const storyId = Number(req.params.storyId);
 
     if (!userIsAdmin(user)) {
-      return res
-        .status(403)
-        .json({ error: "You are not authorized to modify this story." });
+        return res.status(403).json({ error: "You are not authorized to modify this story." });
     }
 
-    const editedStory = await prismaClient.story.update({
-      where: {
-        id: storyId,
-      },
-      data: {
-        featured: boolean
-      },
+    const raw = String(req.params.boolean).toLowerCase();
+    if (raw !== "true" && raw !== "false") {
+        return res.status(400).json({ error: "Boolean must be 'true' or 'false'." });
+    }
+    const featured = raw === "true";
+
+    const updated = await prismaClient.story.update({
+        where: { id: storyId },
+        data: { featured },
     });
 
-    return res.status(201);
+    return res.status(200).json(updated);
   })
 );
 
