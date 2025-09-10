@@ -322,8 +322,9 @@ storyRouter.post(
     asyncHandler(async (req: Request, res: Response) => {
         const user = req.user!;
 
-        const {title, chapters} = req.body as {
+        const {title, description, chapters} = req.body as {
             title: string;
+            description: string;
             chapters: Array<{
                 title: string;
                 sequence: number;
@@ -344,7 +345,7 @@ storyRouter.post(
             return tx.story.create({
                 data: {
                     title,
-                    description: "",
+                    description: description ?? "",
                     author: user.id,
                     owner: user.id,
                     isDraft: false,
@@ -397,6 +398,7 @@ storyRouter.get(
             select: {
                 id: true,
                 title: true,
+                description: true,
                 titleImage: true,
                 chapters: {
                     orderBy: {sequence: "asc"},
@@ -425,6 +427,7 @@ storyRouter.get(
         const story = {
             id: raw.id,
             title: raw.title,
+            description: raw.description,
             titleImage: raw.titleImage,
             chapters: raw.chapters.map(chap => {
                 const { StoryStep, ...chapRest } = chap;
@@ -447,6 +450,7 @@ storyRouter.put(
         const storyId = parseInt(req.params.storyId, 10);
         const body = req.body as {
             title: string;
+            description: string;
             chapters: Array<{
                 title: string;
                 sequence: number;
@@ -475,7 +479,7 @@ storyRouter.put(
         await prismaClient.$transaction(async (tx) => {
             await tx.story.update({
                 where: { id: storyId },
-                data: { title: body.title }
+                data: { title: body.title, description: body.description ?? "" }
             });
 
             const chapterIds = await tx.chapter.findMany({
