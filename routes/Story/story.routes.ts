@@ -348,7 +348,7 @@ storyRouter.post(
                     description: description ?? "",
                     author: user.id,
                     owner: user.id,
-                    isDraft: false,
+                    isDraft: true,
                     chapters: {
                         create: chapters.map((chap) => ({
                             name: chap.title,
@@ -529,6 +529,38 @@ storyRouter.put(
         });
 
         return res.status(200).json({ success: true, message: "Updated story" });
+    })
+);
+
+storyRouter.put(
+    "/new/:storyId/publish-state",
+    authMiddleware,
+    asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user!;
+        const storyId = parseInt(req.params.storyId, 10);
+        const { isDraft } = (req.body ?? {}) as { isDraft?: boolean };
+
+        if (typeof isDraft !== "boolean") {
+            return res.status(400).json({ message: "isDraft must be boolean" });
+        }
+
+        if (!userIsAdmin(user)) {
+            const own = await prismaClient.story.findFirst({
+                where: { id: storyId, owner: user.id },
+                select: { id: true },
+            });
+            if (!own) return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const updated = await prismaClient.story.update({
+            where: { id: storyId },
+            data: {
+                isDraft,
+            },
+            include: includeAll,
+        });
+
+        return res.status(200).json(updated);
     })
 );
 
