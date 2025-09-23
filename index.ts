@@ -20,6 +20,20 @@ if (process.env.KEYCLOAK_URL == null || process.env.KEYCLOAK_URL == ""
     throw new Error("keycloak env vars not set");
 }
 
+const HARD_TIMEOUT_MS = 15000;
+
+app.use((req, res, next) => {
+    const timer = setTimeout(() => {
+        if (!res.headersSent) {
+            console.error(`Timed out: ${req.method} ${req.originalUrl}`);
+            res.status(504).json({ message: "Gateway timeout" });
+        }
+    }, HARD_TIMEOUT_MS);
+    res.on("finish", () => clearTimeout(timer));
+    res.on("close",  () => clearTimeout(timer));
+    next();
+});
+
 app.use(cors())
 app.use(express.json({ limit: "10mb"}))
 app.use(express.urlencoded({ extended: true }));

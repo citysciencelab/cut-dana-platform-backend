@@ -392,8 +392,7 @@ storyRouter.get(
 
         const raw = await prismaClient.story.findFirstOrThrow({
             where: {
-                id: storyId,
-                isDraft: false
+                id: storyId
             },
             select: {
                 id: true,
