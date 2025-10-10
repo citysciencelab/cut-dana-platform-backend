@@ -331,15 +331,25 @@ storyRouter.post(
                 steps: Array<{
                     title: string;
                     description: string;
+                    stepWidth?: number;
+                    visible?: boolean;
+                    is3D?: boolean;
+                    navigation3D?: any;
+                    interactionAddons?: string[];
                     mapConfig: {
                         centerCoordinates: number[];
                         zoomLevel: number;
                         backgroundMapId: string;
                     };
                     informationLayerIds?: string[];
+                    mapSources?: any[];
                 }>;
             }>;
         };
+
+        if (!Array.isArray(chapters)) {
+          return res.status(400).json({ error: "chapters must be an array" });
+        }
 
         const newStory = await prismaClient.$transaction(async (tx) => {
             return tx.story.create({
@@ -360,13 +370,14 @@ storyRouter.post(
                                     visible: step.visible ?? true,
                                     title: step.title,
                                     html: step.description,
-                                    centerCoordinate: step.mapConfig.centerCoordinates,
-                                    zoomLevel: step.mapConfig.zoomLevel,
-                                    backgroundMapId: step.mapConfig.backgroundMapId ?? "",
+                                    centerCoordinate: step.mapConfig?.centerCoordinates ?? [],
+                                    zoomLevel: step.mapConfig?.zoomLevel ?? 0,
+                                    backgroundMapId: step.mapConfig?.backgroundMapId ?? "",
                                     interactionAddons: step.interactionAddons ?? [],
                                     is3D: step.is3D ?? false,
                                     navigation3D: step.navigation3D ?? {},
                                     informationLayerIds: (step.informationLayerIds ?? []).map(String),
+                                    mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
                                 }))
                             }
                         }))

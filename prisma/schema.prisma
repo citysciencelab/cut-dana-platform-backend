@@ -99,6 +99,7 @@ model StoryStep {
   wmsLayers         wmsLayer[]
   ThreeDFiles       ThreeDFiles[]
   informationLayerIds String[]
+  mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
 }
 
 model File {
