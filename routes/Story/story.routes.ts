@@ -335,6 +335,7 @@ storyRouter.post(
                     visible?: boolean;
                     is3D?: boolean;
                     navigation3D?: any;
+                    modelUrl?: string;
                     interactionAddons?: string[];
                     mapConfig: {
                         centerCoordinates: number[];
@@ -376,6 +377,7 @@ storyRouter.post(
                                     interactionAddons: step.interactionAddons ?? [],
                                     is3D: step.is3D ?? false,
                                     navigation3D: step.navigation3D ?? {},
+                                    modelUrl: step.modelUrl ?? "",
                                     informationLayerIds: (step.informationLayerIds ?? []).map(String),
                                     mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
                                 }))
@@ -392,6 +394,52 @@ storyRouter.post(
         });
 
         return res.status(201).json(newStory);
+    })
+);
+
+// Upload 3d models
+storyRouter.post(
+    "/:storyId/steps/:stepId/model",
+    authMiddleware,
+    filesUpload.single("files"),
+    asyncHandler(async (req, res) => {
+        const storyId = Number(req.params.storyId);
+        const stepId = Number(req.params.stepId);
+
+        const minioMetaData = req.file;
+
+        if (!minioMetaData) {
+            return res.status(500).json({
+                message: "file not found",
+                status: 500,
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ error: "file not found" });
+        }
+
+        const fileData = {
+            fileContext: `stories/${storyId}/steps/${stepId}`,
+            filename: minioMetaData.originalname,
+            mimetype: minioMetaData.mimetype,
+            bucket: process.env.MINIO_BUCKET!,
+            encoding: minioMetaData.encoding,
+            key: minioMetaData.filename,
+            provider: "minio",
+            providerMetaData: JSON.stringify(minioMetaData),
+        };
+
+        let newFile = await prismaClient.file.create({data: fileData});
+
+        const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
+
+        await prismaClient.storyStep.update({
+            where: { id: stepId },
+            data: { modelUrl: fileUrl }
+        });
+
+        return res.status(201).json(newFile);
     })
 );
 
@@ -427,6 +475,10 @@ storyRouter.get(
                                 zoomLevel: true,
                                 backgroundMapId: true,
                                 informationLayerIds: true,
+                                is3D: true,
+                                navigation3D: true,
+                                modelUrl: true,
+                                mapSources: true,
                             }
                         }
                     }

@@ -100,6 +100,7 @@ model StoryStep {
   ThreeDFiles       ThreeDFiles[]
   informationLayerIds String[]
   mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
+  modelUrl          String
 }
 
 model File {
