@@ -101,6 +101,7 @@ model StoryStep {
   informationLayerIds String[]
   mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   modelUrl          String?
+  geoJsonAssets      Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
 }
 
 model File {

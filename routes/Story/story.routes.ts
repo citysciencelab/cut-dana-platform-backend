@@ -443,6 +443,71 @@ storyRouter.post(
     })
 );
 
+// Upload GeoJSON files
+storyRouter.post(
+    "/:storyId/steps/:stepId/geojson",
+    authMiddleware,
+    filesUpload.array("files", 20),
+    asyncHandler(async (req, res) => {
+        const storyId = Number(req.params.storyId);
+        const stepId = Number(req.params.stepId);
+
+        const files = req.files as Express.Multer.File[] | undefined;
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: "files not found" });
+        }
+
+        // Ensure step exists (and read current assets)
+        const step = await prismaClient.storyStep.findUnique({
+            where: { id: stepId },
+            select: { id: true, geoJsonAssets: true },
+        });
+        if (!step) {
+            return res.status(404).json({ error: "step not found" });
+        }
+
+        const created = [];
+        for (const f of files) {
+            const fileData = {
+                fileContext: `stories/${storyId}/steps/${stepId}/geojson`,
+                filename: f.originalname,
+                mimetype: f.mimetype,
+                bucket: process.env.MINIO_BUCKET!,
+                encoding: f.encoding,
+                key: f.filename,
+                provider: "minio",
+                providerMetaData: JSON.stringify(f),
+                fileSize: BigInt(f.size ?? 0),
+            };
+
+            const newFile = await prismaClient.file.create({ data: fileData });
+
+            const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
+            created.push({
+                fileId: newFile.id,
+                name: newFile.filename,
+                url: fileUrl,
+                size: Number(newFile.fileSize ?? 0),
+                mimetype: newFile.mimetype,
+            });
+        }
+
+        const existing = Array.isArray(step.geoJsonAssets) ? step.geoJsonAssets : [];
+        const nextAssets = [...existing, ...created];
+
+        const updated = await prismaClient.storyStep.update({
+            where: { id: stepId },
+            data: { geoJsonAssets: nextAssets },
+            select: { id: true, geoJsonAssets: true },
+        });
+
+        return res.status(201).json({
+            stepId: updated.id,
+            geoJsonAssets: updated.geoJsonAssets,
+        });
+    })
+);
+
 storyRouter.get(
     "/new/:storyId",
     optionalAuthMiddleware,
@@ -479,6 +544,7 @@ storyRouter.get(
                                 navigation3D: true,
                                 modelUrl: true,
                                 mapSources: true,
+                                geoJsonAssets: true,
                             }
                         }
                     }

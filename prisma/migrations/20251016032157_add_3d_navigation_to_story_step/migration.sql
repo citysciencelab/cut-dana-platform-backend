@@ -5,5 +5,5 @@
 
 */
 -- AlterTable
-ALTER TABLE "StoryStep" ADD COLUMN     "modelUrl" TEXT NOT NULL,
+ALTER TABLE "StoryStep" ADD COLUMN     "modelUrl" TEXT NOT NULL DEFAULT '',
 ALTER COLUMN "mapSources" SET DEFAULT '[]'::jsonb;
