@@ -2,6 +2,7 @@
   "name": "story-backend",
   "module": "index.ts",
   "type": "module",
+  "license": "GPLv3",
   "scripts": {
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun --watch run index.ts",
     "generate": "prisma generate",
