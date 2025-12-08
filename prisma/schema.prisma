@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -97,6 +98,10 @@ model StoryStep {
   datasources       Datasource[]
   wmsLayers         wmsLayer[]
   ThreeDFiles       ThreeDFiles[]
+  informationLayerIds String[]
+  mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
+  modelUrl          String?
+  geoJsonAssets      Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
 }
 
 model File {

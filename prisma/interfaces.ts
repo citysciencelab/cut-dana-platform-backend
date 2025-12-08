@@ -80,6 +80,7 @@ export interface StoryStep {
   datasources?: Datasource[];
   wmsLayers?: wmsLayer[];
   ThreeDFiles?: ThreeDFiles[];
+  informationLayerIds?: string[];
 }
 
 export interface File {
