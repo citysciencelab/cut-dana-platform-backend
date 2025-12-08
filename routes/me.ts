@@ -14,7 +14,7 @@ meRouter.get('/', authMiddleware, asyncHandler(async (request: Request, response
 meRouter.delete('/',
     authMiddleware,
     asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(400).json({ error: "Unknown user id" });
 
     const adminToken = await getAdminToken();

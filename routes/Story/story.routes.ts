@@ -402,7 +402,7 @@ storyRouter.post(
     "/:storyId/steps/:stepId/model",
     authMiddleware,
     filesUpload.single("files"),
-    asyncHandler(async (req, res) => {
+    asyncHandler(async (req: any, res: any) => {
         const storyId = Number(req.params.storyId);
         const stepId = Number(req.params.stepId);
 
@@ -448,7 +448,7 @@ storyRouter.post(
     "/:storyId/steps/:stepId/geojson",
     authMiddleware,
     filesUpload.array("files", 20),
-    asyncHandler(async (req, res) => {
+    asyncHandler(async (req: any, res: any) => {
         const storyId = Number(req.params.storyId);
         const stepId = Number(req.params.stepId);
 

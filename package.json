@@ -4,9 +4,10 @@
   "type": "module",
   "license": "GPLv3",
   "scripts": {
+    "apply-migrations": "prisma migrate dev",
+    "build": "tsc",
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun --watch run index.ts",
     "generate": "prisma generate",
-    "apply-migrations": "prisma migrate dev",
     "reset-db": "prisma migrate reset"
   },
   "devDependencies": {
