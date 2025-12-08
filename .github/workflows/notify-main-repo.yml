@@ -1,14 +1,13 @@
-name: Notify Main Repo
+name: Trigger cut-dana-platform-mp Build
 on:
-  push:
-    branches: [ staging ]
+  workflow_dispatch:
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Notify cut-dana-platform-mp
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.PAT }}
-          repository: agriculturedev/cut-dana-platform-mp
+          repository: citysciencelab/cut-dana-platform-mp
           event-type: trigger-main-build
