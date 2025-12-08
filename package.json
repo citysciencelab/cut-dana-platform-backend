@@ -3,8 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun --watch run index.ts",
-    "generate": "prisma generate"
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun --watch run index.ts",
+    "generate": "prisma generate",
+    "apply-migrations": "prisma migrate dev",
+    "reset-db": "prisma migrate reset"
   },
   "devDependencies": {
     "@types/bun": "latest",
