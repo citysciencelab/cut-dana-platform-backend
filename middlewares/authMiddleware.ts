@@ -1,4 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
+import { getKeycloakRealm, getKeycloakUrl } from "../utils/keycloakAdmin";
 
 /**
  * Creates a mock user for local development if authentication is disabled.
@@ -30,7 +31,8 @@ function getTokenFromHeader(authHeader: string | undefined): string | null {
  * Returns user details if valid, otherwise null.
  */
 async function introspectToken(token: string): Promise<any | null> {
-  const introspectionUrl = process.env.KEYCLOAK_URL!;
+  const introspectionUrl = `${getKeycloakUrl()}/realms/${getKeycloakRealm()}/protocol/openid-connect/token/introspect`;
+
   try {
     const response = await fetch(introspectionUrl, {
       method: "POST",
@@ -41,6 +43,12 @@ async function introspectToken(token: string): Promise<any | null> {
         token,
       }),
     });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Introspection request failed ${response.status}: ${body}`);
+    }
+
     const data = await response.json();
 
     // Return the entire data if active, otherwise null
