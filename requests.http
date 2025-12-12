@@ -1,0 +1,89 @@
+### Login as admin user (service account)
+# @name login_admin
+POST https://{{auth_url}}/auth/realms/masterportal/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=backend-client&client_secret={{client_secret}}
+
+###
+
+@admin_token = {{login_admin.response.body.access_token}}
+
+### Login as app user
+# @name login_user
+POST https://{{auth_url}}/auth/realms/masterportal/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=masterportal-client&username={{username}}&password={{password}}
+
+###
+@user_token = {{login_user.response.body.access_token}}
+
+### Create a new user
+# @name create_user
+POST https://{{auth_url}}/auth/admin/realms/masterportal/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+    "username": "dev",
+    "email": "dev@example.com",
+    "emailVerified": true,
+    "enabled": true,
+    "firstName": "Dev",
+    "lastName": "User",
+    "credentials": [{
+        "type": "password",
+        "value": "dev",
+        "temporary": false
+    }]
+}
+
+### Create a new story
+# @name create_story
+POST https://{{backend_url}}/api/stories/new
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+    "title": "my story",
+    "description": "this is my story",
+    "chapters": [
+        {
+            "sequence": 1,
+            "title": "chapter a",
+            "steps": [
+                {
+                    "title": "step 1",
+                    "description": "<p>first step</p>",
+                    "mapConfig": {
+                        "centerCoordinates": [
+                            565874.000001193,
+                            5934140.000010191
+                        ],
+                        "zoomLevel": 4,
+                        "backgroundMapId": null
+                    },
+                    "informationLayerIds": [],
+                    "mapSources": [],
+                    "is3D": false,
+                    "modelUrl": "",
+                    "navigation3D": {
+                        "coordinates": {
+                            "easting": null,
+                            "northing": null
+                        },
+                        "dimensions": {
+                            "height": 0,
+                            "adaptToTerrain": true
+                        },
+                        "transforms": {
+                            "rotation": 0,
+                            "scale": 1
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
