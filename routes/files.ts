@@ -4,12 +4,9 @@ import {PrismaClient} from "@prisma/client";
 import asyncHandler from "../handlers/asyncHandler.ts";
 
 const prismaClient = new PrismaClient();
-
-
 const filesRouter = Router()
 
 filesRouter.get('/*', asyncHandler(async (req: Request, res: Response) => {
-
     const pathArray = req.params[0].split('/'); // Split the remaining path into an array
     const filename = pathArray.pop(); // Get the last item as the filename
     const context = pathArray.join('/'); // Join the remaining items as the context
@@ -29,6 +26,7 @@ filesRouter.get('/*', asyncHandler(async (req: Request, res: Response) => {
 
     return res.redirect(signedUrl.toString())
 }));
+
 filesRouter.post('/:context', filesUpload.single('files'), asyncHandler(async (req: Request, res: Response) => {
     const minioMetaData = req.file;
 

@@ -9,7 +9,6 @@ export const OwnedStory = (userId: string) => {
 
 export const PublishedStory = {isDraft: false}
 
-
 export const OwnedOrPublishedStory = (userId?: string) => {
   if (!userId) return PublishedStory;
   return {
