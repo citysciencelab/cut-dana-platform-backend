@@ -5,6 +5,8 @@
   "license": "GPLv3",
   "scripts": {
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun --watch run index.ts",
+    "build": "vite build",
+    "start": "bun /app/dist/index.js",
     "generate": "prisma generate",
     "apply-migrations": "prisma migrate dev",
     "reset-db": "prisma migrate reset"
@@ -28,12 +30,13 @@
     "express-openapi-validator": "^5.4.6",
     "express-session": "^1.18.1",
     "keycloak-connect": "^26.1.1",
-    "minio": "^8.0.3",
+    "minio": "^8.0.6",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "openapi-typescript": "^7.6.1",
     "prisma-generator-typescript-interfaces": "^1.7.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "vite": "^7.2.7"
   }
 }
