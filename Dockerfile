@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package.json bun.lockb ./
 RUN bun install --frozen-lockfile
 COPY . .
+RUN bunx prisma generate
 RUN bun run build
 
 # 2. run the app
