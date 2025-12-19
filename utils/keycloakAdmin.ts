@@ -75,3 +75,26 @@ export async function deleteKcUser(userId: string, adminToken: string) {
 
     console.log(`Successfully deleted Keycloak user with ID: ${userId}`);
 }
+
+export async function getKcUserById(userId: string, adminToken: string) {
+    console.log(`Attempting to get Keycloak user with ID: ${userId}`);
+
+    const res = await fetch(
+        `${getKeycloakUrl()}/admin/realms/${getKeycloakRealm()}/users/${userId}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${adminToken}`
+            }
+        }
+    );
+
+    if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Error while getting a user ${res.status}: ${body}`);
+    }
+
+    const user = await res.json();
+    console.log(`Successfully retrieved Keycloak user with ID: ${userId}`);
+    return user;
+}
