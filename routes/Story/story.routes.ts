@@ -191,8 +191,11 @@ storyRouter.post(
   "/:storyId/play",
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = parseInt(req.params.storyId, 10);
+    if (!storyId || isNaN(storyId)) {
+      return res.status(400).json({error: "Invalid story ID"});
+    }
 
-    const editedStory = await prismaClient.story.update({
+    await prismaClient.story.update({
       where: {
         id: storyId,
       },
@@ -201,7 +204,7 @@ storyRouter.post(
       },
     });
 
-    return res.status(200);
+    return res.status(200).send();
   })
 );
 
