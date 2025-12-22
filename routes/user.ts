@@ -1,41 +1,33 @@
 ﻿import {Router, type Request, type Response} from "express";
 import asyncHandler from "../handlers/asyncHandler.ts";
+import authMiddleware from '../middlewares/authMiddleware.ts';
+import { deleteKcUser, getAdminToken, getKcUserById } from '../utils/keycloakAdmin.ts';
+import { OwnedStory } from './Story/DbFilters.ts';
+import meRouter from './me.ts';
 
 const userRouter = Router()
 
-userRouter.get('/storyId', asyncHandler(async (request: Request, response: Response) => {
-    const introspectionUrl = `https://keycloak.datanarrator.city/admin/realms/elie-dana/users/${request.params.id}`;
-    console.log("GET /users/:id", request.params.id, introspectionUrl);
+userRouter.get('/:uuid',
+    asyncHandler(async (req: Request, res: Response) => {
+        const uuid = req.params?.uuid;
 
-    try {
-        const url = "https://keycloak.datanarrator.city/realms/elie-dana/protocol/openid-connect/token";
-        const params = new URLSearchParams({
-            grant_type: "client_credentials",
-            client_id: "elie-dana-backend",
-            client_secret: "xuIy9uNNT9ITiLnvfQhiLXFhmYlQkhQZ"
+        if (!uuid){
+            return res.status(400).json({ error: "Unknown user id" });
+        }
+
+        const adminToken = await getAdminToken();
+
+        const user = await getKcUserById(uuid, adminToken);
+
+        if (!user){
+            return res.status(404).json({ error: "User could not be found in keycloak" });
+        }
+
+        return res.status(200).json({
+            email: user.email,
+            username: user.username
         });
-
-        const r = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: params
-        });
-        const rJson = await r.json();
-        console.log("RJSON", rJson);
-        const re = await fetch(introspectionUrl, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${rJson.access_token}`
-            },
-        });
-
-        const data = await re.json();
-        return response.json(data);
-    } catch (err) {
-        console.error(err);
-        return response.status(500).send("Something went wrong");
-    }
-}))
-
+    })
+);
 export default userRouter;
 
