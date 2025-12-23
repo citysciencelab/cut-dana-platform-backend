@@ -1,4 +1,0 @@
-### Delete chapter from story
-DELETE {{baseUri}}/stories/24/chapter/4
-Content-Type: application/json
-###
