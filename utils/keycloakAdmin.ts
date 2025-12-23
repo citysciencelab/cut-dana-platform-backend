@@ -1,9 +1,13 @@
+import { setupLogger } from './logger.ts';
+
 const {
     KEYCLOAK_URL,
     KEYCLOAK_REALM,
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_CLIENT_SECRET,
 } = process.env;
+
+const logger = setupLogger({ label: 'keycloakAdmin' });
 
 export function getKeycloakUrl() {
     if (!KEYCLOAK_URL) throw new Error("KEYCLOAK_URL is not available");
@@ -30,7 +34,7 @@ export function getKeycloakClientSecret() {
 }
 
 export async function getAdminToken() {
-    console.log(`Attempting to get admin token from Keycloak at ${getKeycloakUrl()}/realms/${getKeycloakRealm()}`);
+    logger.info(`Attempting to get admin token from Keycloak at ${getKeycloakUrl()}/realms/${getKeycloakRealm()}`);
 
     const res = await fetch(
         `${getKeycloakUrl()}/realms/${getKeycloakRealm()}/protocol/openid-connect/token`,
@@ -56,7 +60,7 @@ export async function getAdminToken() {
 }
 
 export async function deleteKcUser(userId: string, adminToken: string) {
-    console.log(`Attempting to delete Keycloak user with ID: ${userId}`);
+    logger.info(`Attempting to delete Keycloak user with ID: ${userId}`);
 
     const res = await fetch(
         `${getKeycloakUrl()}/admin/realms/${getKeycloakRealm()}/users/${userId}`,
@@ -73,11 +77,11 @@ export async function deleteKcUser(userId: string, adminToken: string) {
         throw new Error(`Error while deleting a user ${res.status}: ${body}`);
     }
 
-    console.log(`Successfully deleted Keycloak user with ID: ${userId}`);
+    logger.info(`Successfully deleted Keycloak user with ID: ${userId}`);
 }
 
 export async function getKcUserById(userId: string, adminToken: string) {
-    console.log(`Attempting to get Keycloak user with ID: ${userId}`);
+    logger.info(`Attempting to get Keycloak user with ID: ${userId}`);
 
     const res = await fetch(
         `${getKeycloakUrl()}/admin/realms/${getKeycloakRealm()}/users/${userId}`,
@@ -95,6 +99,6 @@ export async function getKcUserById(userId: string, adminToken: string) {
     }
 
     const user = await res.json();
-    console.log(`Successfully retrieved Keycloak user with ID: ${userId}`);
+    logger.info(`Successfully retrieved Keycloak user with ID: ${userId}`);
     return user;
 }
