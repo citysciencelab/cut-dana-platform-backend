@@ -62,6 +62,12 @@ export interface SelectedModelId {
   positionId: number | null;
 }
 
+export type GeoJSONAsset = {
+  id: string;
+  title: string;
+  geoJson: JsonValue;
+};
+
 export interface StoryStep {
   id: number;
   stepNumber: number;
@@ -81,6 +87,7 @@ export interface StoryStep {
   wmsLayers?: wmsLayer[];
   ThreeDFiles?: ThreeDFiles[];
   informationLayerIds?: string[];
+  geoJsonAssets: GeoJSONAsset[];
 }
 
 export interface File {

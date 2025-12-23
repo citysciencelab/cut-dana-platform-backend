@@ -5,6 +5,7 @@ import asyncHandler from "../../handlers/asyncHandler";
 import { filesUpload } from "../../utils/minio";
 import { OwnedOrPublishedStory, OwnedStory, PublishedStory } from "./DbFilters";
 import { userIsAdmin } from "../../types/User.ts";
+import type { GeoJSONAsset } from "../../prisma/interfaces.ts";
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
@@ -347,11 +348,7 @@ storyRouter.post(
           };
           informationLayerIds?: string[];
           mapSources?: any[];
-          geoJsonAssets?: Array<{
-            id: number;
-            title: string;
-            geoJson: any;
-          }>;
+          geoJsonAssets?: GeoJSONAsset[];
         }>;
       }>;
     };
@@ -535,11 +532,7 @@ storyRouter.put(
             backgroundMapId: string | null;
           };
           informationLayerIds?: string[];
-          geoJsonAssets?: Array<{
-            id: number;
-            title: string;
-            geoJson: any;
-          }>
+          geoJsonAssets?: GeoJSONAsset[];
         }>;
       }>;
     };
