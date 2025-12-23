@@ -1,17 +1,17 @@
-import {Router, type Request, type Response} from "express";
-import {PrismaClient} from "@prisma/client";
-import authMiddleware, {optionalAuthMiddleware} from "../../middlewares/authMiddleware";
+import { Router, type Request, type Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import authMiddleware, { optionalAuthMiddleware } from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
-import {filesUpload} from "../../utils/minio";
-import {OwnedOrPublishedStory, OwnedStory, PublishedStory } from "./DbFilters";
-import {userIsAdmin} from "../../types/User.ts";
+import { filesUpload } from "../../utils/minio";
+import { OwnedOrPublishedStory, OwnedStory, PublishedStory } from "./DbFilters";
+import { userIsAdmin } from "../../types/User.ts";
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
 
 const includeAll = {
   titleImage: true,
-  chapters: {include: {StoryStep: true}}
+  chapters: { include: { StoryStep: true } }
 }
 
 /**
@@ -129,7 +129,7 @@ storyRouter.post(
       owner: user.id,
     };
 
-    const newStory = await prismaClient.story.create({data: storyData});
+    const newStory = await prismaClient.story.create({ data: storyData });
     return res.status(201).json(newStory.id);
   })
 );
@@ -150,7 +150,7 @@ storyRouter.post(
       owner: user.id,
     };
 
-    const newStory = await prismaClient.story.create({data: storyData});
+    const newStory = await prismaClient.story.create({ data: storyData });
     return res.status(201).json(newStory.id);
   })
 );
@@ -166,18 +166,18 @@ storyRouter.post(
     const storyId = Number(req.params.storyId);
 
     if (!userIsAdmin(user)) {
-        return res.status(403).json({ error: "You are not authorized to modify this story." });
+      return res.status(403).json({ error: "You are not authorized to modify this story." });
     }
 
     const raw = String(req.params.boolean).toLowerCase();
     if (raw !== "true" && raw !== "false") {
-        return res.status(400).json({ error: "Boolean must be 'true' or 'false'." });
+      return res.status(400).json({ error: "Boolean must be 'true' or 'false'." });
     }
     const featured = raw === "true";
 
     const updated = await prismaClient.story.update({
-        where: { id: storyId },
-        data: { featured },
+      where: { id: storyId },
+      data: { featured },
     });
 
     return res.status(200).json(updated);
@@ -192,7 +192,7 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = parseInt(req.params.storyId, 10);
     if (!storyId || isNaN(storyId)) {
-      return res.status(400).json({error: "Invalid story ID"});
+      return res.status(400).json({ error: "Invalid story ID" });
     }
 
     await prismaClient.story.update({
@@ -200,7 +200,7 @@ storyRouter.post(
         id: storyId,
       },
       data: {
-        views: {increment: 1}
+        views: { increment: 1 }
       },
     });
 
@@ -295,7 +295,7 @@ storyRouter.post(
     };
 
 
-    let newFile = await prismaClient.file.create({data: fileData});
+    let newFile = await prismaClient.file.create({ data: fileData });
 
     let extraCheck = {};
 
@@ -320,379 +320,326 @@ storyRouter.post(
 /** NEW **/
 
 storyRouter.post(
-    "/new",
-    authMiddleware,
-    asyncHandler(async (req: Request, res: Response) => {
-        const user = req.user!;
+  "/new",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
 
-        const {title, description, chapters} = req.body as {
+    const { title, description, chapters } = req.body as {
+      title: string;
+      description: string;
+      chapters: Array<{
+        title: string;
+        sequence: number;
+        steps: Array<{
+          title: string;
+          description: string;
+          stepWidth?: number;
+          visible?: boolean;
+          is3D?: boolean;
+          navigation3D?: any;
+          modelUrl?: string;
+          interactionAddons?: string[];
+          mapConfig: {
+            centerCoordinates: number[];
+            zoomLevel: number;
+            backgroundMapId: string;
+          };
+          informationLayerIds?: string[];
+          mapSources?: any[];
+          geoJsonAssets?: Array<{
+            id: number;
             title: string;
-            description: string;
-            chapters: Array<{
-                title: string;
-                sequence: number;
-                steps: Array<{
-                    title: string;
-                    description: string;
-                    stepWidth?: number;
-                    visible?: boolean;
-                    is3D?: boolean;
-                    navigation3D?: any;
-                    modelUrl?: string;
-                    interactionAddons?: string[];
-                    mapConfig: {
-                        centerCoordinates: number[];
-                        zoomLevel: number;
-                        backgroundMapId: string;
-                    };
-                    informationLayerIds?: string[];
-                    mapSources?: any[];
-                }>;
-            }>;
-        };
+            geoJson: any;
+          }>;
+        }>;
+      }>;
+    };
 
-        if (!Array.isArray(chapters)) {
-          return res.status(400).json({ error: "chapters must be an array" });
+    if (!Array.isArray(chapters)) {
+      return res.status(400).json({ error: "chapters must be an array" });
+    }
+
+    const newStory = await prismaClient.$transaction(async (tx) => {
+      return tx.story.create({
+        data: {
+          title,
+          description: description ?? "",
+          author: user.id,
+          owner: user.id,
+          isDraft: true,
+          chapters: {
+            create: chapters.map((chap) => ({
+              name: chap.title,
+              sequence: chap.sequence,
+              StoryStep: {
+                create: chap.steps.map((step, stepIdx) => ({
+                  stepNumber: stepIdx + 1,
+                  stepWidth: step.stepWidth ?? 0,
+                  visible: step.visible ?? true,
+                  title: step.title,
+                  html: step.description,
+                  centerCoordinate: step.mapConfig?.centerCoordinates ?? [],
+                  zoomLevel: step.mapConfig?.zoomLevel ?? 0,
+                  backgroundMapId: step.mapConfig?.backgroundMapId ?? "",
+                  interactionAddons: step.interactionAddons ?? [],
+                  is3D: step.is3D ?? false,
+                  navigation3D: step.navigation3D ?? {},
+                  modelUrl: step.modelUrl ?? "",
+                  informationLayerIds: (step.informationLayerIds ?? []).map(String),
+                  mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
+                  geoJsonAssets: step.geoJsonAssets ? step.geoJsonAssets : [],
+                }))
+              }
+            }))
+          }
+        },
+        include: {
+          chapters: {
+            include: { StoryStep: true }
+          }
         }
+      });
+    });
 
-        const newStory = await prismaClient.$transaction(async (tx) => {
-            return tx.story.create({
-                data: {
-                    title,
-                    description: description ?? "",
-                    author: user.id,
-                    owner: user.id,
-                    isDraft: true,
-                    chapters: {
-                        create: chapters.map((chap) => ({
-                            name: chap.title,
-                            sequence: chap.sequence,
-                            StoryStep: {
-                                create: chap.steps.map((step, stepIdx) => ({
-                                    stepNumber: stepIdx + 1,
-                                    stepWidth: step.stepWidth ?? 0,
-                                    visible: step.visible ?? true,
-                                    title: step.title,
-                                    html: step.description,
-                                    centerCoordinate: step.mapConfig?.centerCoordinates ?? [],
-                                    zoomLevel: step.mapConfig?.zoomLevel ?? 0,
-                                    backgroundMapId: step.mapConfig?.backgroundMapId ?? "",
-                                    interactionAddons: step.interactionAddons ?? [],
-                                    is3D: step.is3D ?? false,
-                                    navigation3D: step.navigation3D ?? {},
-                                    modelUrl: step.modelUrl ?? "",
-                                    informationLayerIds: (step.informationLayerIds ?? []).map(String),
-                                    mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
-                                }))
-                            }
-                        }))
-                    }
-                },
-                include: {
-                    chapters: {
-                        include: {StoryStep: true}
-                    }
-                }
-            });
-        });
-
-        return res.status(201).json(newStory);
-    })
+    return res.status(201).json(newStory);
+  })
 );
 
 // Upload 3d models
 storyRouter.post(
-    "/:storyId/steps/:stepId/model",
-    authMiddleware,
-    filesUpload.single("files"),
-    asyncHandler(async (req: Request, res: Response) => {
-        const storyId = Number(req.params.storyId);
-        const stepId = Number(req.params.stepId);
+  "/:storyId/steps/:stepId/model",
+  authMiddleware,
+  filesUpload.single("files"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const storyId = Number(req.params.storyId);
+    const stepId = Number(req.params.stepId);
 
-        const minioMetaData = req.file;
+    const minioMetaData = req.file;
 
-        if (!minioMetaData) {
-            return res.status(500).json({
-                message: "file not found",
-                status: 500,
-            });
-        }
+    if (!minioMetaData) {
+      return res.status(500).json({
+        message: "file not found",
+        status: 500,
+      });
+    }
 
-        if (!req.file) {
-            return res.status(400).json({ error: "file not found" });
-        }
+    if (!req.file) {
+      return res.status(400).json({ error: "file not found" });
+    }
 
-        const fileData = {
-            fileContext: `stories/${storyId}/steps/${stepId}`,
-            filename: minioMetaData.originalname,
-            mimetype: minioMetaData.mimetype,
-            bucket: process.env.MINIO_BUCKET!,
-            encoding: minioMetaData.encoding,
-            key: minioMetaData.filename,
-            provider: "minio",
-            providerMetaData: JSON.stringify(minioMetaData),
-        };
+    const fileData = {
+      fileContext: `stories/${storyId}/steps/${stepId}`,
+      filename: minioMetaData.originalname,
+      mimetype: minioMetaData.mimetype,
+      bucket: process.env.MINIO_BUCKET!,
+      encoding: minioMetaData.encoding,
+      key: minioMetaData.filename,
+      provider: "minio",
+      providerMetaData: JSON.stringify(minioMetaData),
+    };
 
-        let newFile = await prismaClient.file.create({data: fileData});
+    let newFile = await prismaClient.file.create({ data: fileData });
 
-        const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
+    const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
 
-        await prismaClient.storyStep.update({
-            where: { id: stepId },
-            data: { modelUrl: fileUrl }
-        });
+    await prismaClient.storyStep.update({
+      where: { id: stepId },
+      data: { modelUrl: fileUrl }
+    });
 
-        return res.status(201).json(newFile);
-    })
-);
-
-// Upload GeoJSON files
-storyRouter.post(
-    "/:storyId/steps/:stepId/geojson",
-    authMiddleware,
-    filesUpload.array("files", 20),
-    asyncHandler(async (req: Request, res: Response) => {
-        const storyId = Number(req.params.storyId);
-        const stepId = Number(req.params.stepId);
-
-        const files = req.files as Express.Multer.File[] | undefined;
-        if (!files || files.length === 0) {
-            return res.status(400).json({ error: "files not found" });
-        }
-
-        // Ensure step exists (and read current assets)
-        const step = await prismaClient.storyStep.findUnique({
-            where: { id: stepId },
-            select: { id: true, geoJsonAssets: true },
-        });
-        if (!step) {
-            return res.status(404).json({ error: "step not found" });
-        }
-
-        const created = [];
-        for (const f of files) {
-            const fileData = {
-                fileContext: `stories/${storyId}/steps/${stepId}/geojson`,
-                filename: f.originalname,
-                mimetype: f.mimetype,
-                bucket: process.env.MINIO_BUCKET!,
-                encoding: f.encoding,
-                key: f.filename,
-                provider: "minio",
-                providerMetaData: JSON.stringify(f),
-                fileSize: BigInt(f.size ?? 0),
-            };
-
-            const newFile = await prismaClient.file.create({ data: fileData });
-
-            const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
-            created.push({
-                fileId: newFile.id,
-                name: newFile.filename,
-                url: fileUrl,
-                size: Number(newFile.fileSize ?? 0),
-                mimetype: newFile.mimetype,
-            });
-        }
-
-        const existing = Array.isArray(step.geoJsonAssets) ? step.geoJsonAssets : [];
-        const nextAssets = [...existing, ...created];
-
-        const updated = await prismaClient.storyStep.update({
-            where: { id: stepId },
-            data: { geoJsonAssets: nextAssets },
-            select: { id: true, geoJsonAssets: true },
-        });
-
-        return res.status(201).json({
-            stepId: updated.id,
-            geoJsonAssets: updated.geoJsonAssets,
-        });
-    })
+    return res.status(201).json(newFile);
+  })
 );
 
 storyRouter.get(
-    "/new/:storyId",
-    optionalAuthMiddleware,
-    asyncHandler(async (req: Request, res: Response) => {
-        const storyId = parseInt(req.params.storyId);
+  "/new/:storyId",
+  optionalAuthMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const storyId = parseInt(req.params.storyId);
 
-        const raw = await prismaClient.story.findFirstOrThrow({
-            where: {
-                id: storyId
-            },
-            select: {
+    const raw = await prismaClient.story.findFirstOrThrow({
+      where: {
+        id: storyId
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        titleImage: true,
+        chapters: {
+          orderBy: { sequence: "asc" },
+          select: {
+            id: true,
+            name: true,
+            sequence: true,
+            StoryStep: {
+              orderBy: { stepNumber: "asc" },
+              select: {
                 id: true,
+                stepNumber: true,
                 title: true,
-                description: true,
-                titleImage: true,
-                chapters: {
-                    orderBy: {sequence: "asc"},
-                    select: {
-                        id: true,
-                        name: true,
-                        sequence: true,
-                        StoryStep: {
-                            orderBy: {stepNumber: "asc"},
-                            select: {
-                                id: true,
-                                stepNumber: true,
-                                title: true,
-                                html: true,
-                                centerCoordinate: true,
-                                zoomLevel: true,
-                                backgroundMapId: true,
-                                informationLayerIds: true,
-                                is3D: true,
-                                navigation3D: true,
-                                modelUrl: true,
-                                mapSources: true,
-                                geoJsonAssets: true,
-                            }
-                        }
-                    }
-                }
+                html: true,
+                centerCoordinate: true,
+                zoomLevel: true,
+                backgroundMapId: true,
+                informationLayerIds: true,
+                is3D: true,
+                navigation3D: true,
+                modelUrl: true,
+                mapSources: true,
+                geoJsonAssets: true,
+              }
             }
-        })
-
-        const story = {
-            id: raw.id,
-            title: raw.title,
-            description: raw.description,
-            titleImage: raw.titleImage,
-            chapters: raw.chapters.map(chap => {
-                const { StoryStep, ...chapRest } = chap;
-                return {
-                    ...chapRest,
-                    steps: StoryStep
-                };
-            })
-        };
-
-        return res.status(200).json(story);
+          }
+        }
+      }
     })
+
+    const story = {
+      id: raw.id,
+      title: raw.title,
+      description: raw.description,
+      titleImage: raw.titleImage,
+      chapters: raw.chapters.map(chap => {
+        const { StoryStep, ...chapRest } = chap;
+        return {
+          ...chapRest,
+          steps: StoryStep
+        };
+      })
+    };
+
+    return res.status(200).json(story);
+  })
 );
 
 storyRouter.put(
-    "/new/:storyId",
-    authMiddleware,
-    asyncHandler(async (req: Request, res: Response) => {
-        const user = req.user!;
-        const storyId = parseInt(req.params.storyId, 10);
-        const body = req.body as {
+  "/new/:storyId",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const storyId = parseInt(req.params.storyId, 10);
+    const body = req.body as {
+      title: string;
+      description: string;
+      chapters: Array<{
+        title: string;
+        sequence: number;
+        steps: Array<{
+          title: string;
+          description: string;
+          mapConfig: {
+            centerCoordinates: number[];
+            zoomLevel: number;
+            backgroundMapId: string | null;
+          };
+          informationLayerIds?: string[];
+          geoJsonAssets?: Array<{
+            id: number;
             title: string;
-            description: string;
-            chapters: Array<{
-                title: string;
-                sequence: number;
-                steps: Array<{
-                    title: string;
-                    description: string;
-                    mapConfig: {
-                        centerCoordinates: number[];
-                        zoomLevel: number;
-                        backgroundMapId: string | null;
-                    };
-                    informationLayerIds?: string[];
-                }>;
-            }>;
-        };
+            geoJson: any;
+          }>
+        }>;
+      }>;
+    };
 
-        if (!userIsAdmin(user)) {
-            const own = await prismaClient.story.findFirst({
-                where: { id: storyId, owner: user.id },
-                select: { id: true }
-            });
+    if (!userIsAdmin(user)) {
+      const own = await prismaClient.story.findFirst({
+        where: { id: storyId, owner: user.id },
+        select: { id: true }
+      });
 
-            if (!own) return res.status(403).json({ message: "Forbidden" });
-        }
+      if (!own) return res.status(403).json({ message: "Forbidden" });
+    }
 
-        await prismaClient.$transaction(async (tx) => {
-            await tx.story.update({
-                where: { id: storyId },
-                data: { title: body.title, description: body.description ?? "" }
-            });
+    await prismaClient.$transaction(async (tx) => {
+      await tx.story.update({
+        where: { id: storyId },
+        data: { title: body.title, description: body.description ?? "" }
+      });
 
-            const chapterIds = await tx.chapter.findMany({
-                where: { storyId },
-                select: { id: true }
-            });
+      const chapterIds = await tx.chapter.findMany({
+        where: { storyId },
+        select: { id: true }
+      });
 
-            if (chapterIds.length) {
-                await tx.storyStep.deleteMany({
-                    where: { chapterId: { in: chapterIds.map(c => c.id) } }
-                });
-                await tx.chapter.deleteMany({ where: { storyId } });
-            }
+      if (chapterIds.length) {
+        await tx.storyStep.deleteMany({
+          where: { chapterId: { in: chapterIds.map(c => c.id) } }
+        });
+        await tx.chapter.deleteMany({ where: { storyId } });
+      }
 
-            for (const chap of body.chapters ?? []) {
-                const newChapter = await tx.chapter.create({
-                    data: {
-                        storyId,
-                        name: chap.title,
-                        sequence: chap.sequence,
-                    },
-                    select: { id: true }
-                });
-
-                const steps = chap.steps ?? [];
-                for (let i = 0; i < steps.length; i++) {
-                    const s = steps[i];
-                    await tx.storyStep.create({
-                        data: {
-                            chapterId: newChapter.id,
-                            stepNumber: i + 1,
-                            stepWidth: 0,
-                            visible: true,
-                            title: s.title,
-                            html: s.description,
-                            centerCoordinate: s.mapConfig.centerCoordinates,
-                            zoomLevel: s.mapConfig.zoomLevel,
-                            backgroundMapId: s.mapConfig.backgroundMapId ?? "",
-                            interactionAddons: [],
-                            is3D: false,
-                            navigation3D: {},
-                            informationLayerIds: (s.informationLayerIds ?? []).map(String),
-                        }
-                    });
-                }
-            }
+      for (const chap of body.chapters ?? []) {
+        const newChapter = await tx.chapter.create({
+          data: {
+            storyId,
+            name: chap.title,
+            sequence: chap.sequence,
+          },
+          select: { id: true }
         });
 
-        return res.status(200).json({ success: true, message: "Updated story" });
-    })
+        const steps = chap.steps ?? [];
+        for (let i = 0; i < steps.length; i++) {
+          const s = steps[i];
+          await tx.storyStep.create({
+            data: {
+              chapterId: newChapter.id,
+              stepNumber: i + 1,
+              stepWidth: 0,
+              visible: true,
+              title: s.title,
+              html: s.description,
+              centerCoordinate: s.mapConfig.centerCoordinates,
+              zoomLevel: s.mapConfig.zoomLevel,
+              backgroundMapId: s.mapConfig.backgroundMapId ?? "",
+              interactionAddons: [],
+              is3D: false,
+              navigation3D: {},
+              informationLayerIds: (s.informationLayerIds ?? []).map(String),
+              geoJsonAssets: s.geoJsonAssets ?? [],
+            }
+          });
+        }
+      }
+    });
+
+    return res.status(200).json({ success: true, message: "Updated story" });
+  })
 );
 
 storyRouter.put(
-    "/new/:storyId/publish-state",
-    authMiddleware,
-    asyncHandler(async (req: Request, res: Response) => {
-        const user = req.user!;
-        const storyId = parseInt(req.params.storyId, 10);
-        const { isDraft } = (req.body ?? {}) as { isDraft?: boolean };
+  "/new/:storyId/publish-state",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const storyId = parseInt(req.params.storyId, 10);
+    const { isDraft } = (req.body ?? {}) as { isDraft?: boolean };
 
-        if (typeof isDraft !== "boolean") {
-            return res.status(400).json({ message: "isDraft must be boolean" });
-        }
+    if (typeof isDraft !== "boolean") {
+      return res.status(400).json({ message: "isDraft must be boolean" });
+    }
 
-        if (!userIsAdmin(user)) {
-            const own = await prismaClient.story.findFirst({
-                where: { id: storyId, owner: user.id },
-                select: { id: true },
-            });
-            if (!own) return res.status(403).json({ message: "Forbidden" });
-        }
+    if (!userIsAdmin(user)) {
+      const own = await prismaClient.story.findFirst({
+        where: { id: storyId, owner: user.id },
+        select: { id: true },
+      });
+      if (!own) return res.status(403).json({ message: "Forbidden" });
+    }
 
-        const updated = await prismaClient.story.update({
-            where: { id: storyId },
-            data: {
-                isDraft,
-            },
-            include: includeAll,
-        });
+    const updated = await prismaClient.story.update({
+      where: { id: storyId },
+      data: {
+        isDraft,
+      },
+      include: includeAll,
+    });
 
-        return res.status(200).json(updated);
-    })
+    return res.status(200).json(updated);
+  })
 );
 
 export default storyRouter;
