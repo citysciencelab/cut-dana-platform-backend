@@ -1,5 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getKeycloakRealm, getKeycloakUrl } from "../utils/keycloakAdmin";
+import { setupLogger } from '../utils/logger.ts';
+
+const logger = setupLogger({ label: 'authMiddleware' });
 
 /**
  * Creates a mock user for local development if authentication is disabled.
@@ -54,7 +57,7 @@ async function introspectToken(token: string): Promise<any | null> {
     // Return the entire data if active, otherwise null
     return data.active ? data : null;
   } catch (err) {
-    console.error("Token introspection error:", err);
+    logger.error("Token introspection error:", err);
     return null;
   }
 }
