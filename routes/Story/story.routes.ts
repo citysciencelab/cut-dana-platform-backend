@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import authMiddleware, { optionalAuthMiddleware } from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
 import { filesUpload } from "../../utils/minio";
-import { OwnedOrPublishedStory, OwnedStory, PublishedStory } from "./DbFilters";
+import { userIsOwnerOrAdmin, OwnedStory, PublishedStory } from "./DbFilters";
 import { userIsAdmin } from "../../types/User.ts";
 
 const prismaClient = new PrismaClient();
@@ -85,55 +85,6 @@ storyRouter.get(
   })
 );
 
-
-/**
- * Get a single story by ID, including chapters and steps, if owned, published or user is admin.
- */
-storyRouter.get(
-  "/:storyId",
-  optionalAuthMiddleware,
-  asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user;
-    const storyId = parseInt(req.params.storyId, 10);
-
-    let extraCheck = {};
-
-    if (!user || !userIsAdmin(user)) {
-      extraCheck = OwnedOrPublishedStory(user?.id);
-    }
-
-    const story = await prismaClient.story.findUniqueOrThrow({
-      where: {
-        id: storyId,
-        ...extraCheck,
-      },
-      include: includeAll,
-    });
-
-    return res.status(200).json(story);
-  })
-);
-
-/**
- * Create a new story (not a draft).
- */
-storyRouter.post(
-  "/",
-  authMiddleware,
-  asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user!;
-
-    const storyData = {
-      ...req.body,
-      author: user.id,
-      owner: user.id,
-    };
-
-    const newStory = await prismaClient.story.create({ data: storyData });
-    return res.status(201).json(newStory.id);
-  })
-);
-
 /**
  * Create an empty draft story.
  */
@@ -205,34 +156,6 @@ storyRouter.post(
     });
 
     return res.status(200).send();
-  })
-);
-
-/**
- * Update an existing story (must be the owner).
- */
-storyRouter.put(
-  "/:storyId",
-  authMiddleware,
-  asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user!;
-    const storyId = parseInt(req.params.storyId, 10);
-
-    let extraCheck = {};
-
-    if (!userIsAdmin(user)) {
-      extraCheck = OwnedStory(user.id);
-    }
-
-    const editedStory = await prismaClient.story.update({
-      where: {
-        id: storyId,
-        ...extraCheck,
-      },
-      data: req.body,
-    });
-
-    return res.status(200).json(editedStory);
   })
 );
 
@@ -639,6 +562,52 @@ storyRouter.put(
     });
 
     return res.status(200).json(updated);
+  })
+);
+
+/**
+ * Create or update a chapter (upsert) for a given story if the user owns it or is admin.
+ */
+storyRouter.post(
+  "/:storyId/chapter",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const chapterData = req.body;
+    const storyId = parseInt(req.params.storyId, 10);
+
+    if (!await userIsOwnerOrAdmin(storyId, user)) {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to add chapters to this story." });
+    }
+
+    // If 'id' is provided, update; otherwise create
+    if (chapterData.id) {
+      await prismaClient.chapter.upsert({
+        where: {
+          id: chapterData.id,
+          storyId,
+        },
+        update: {
+          ...chapterData,
+          storyId,
+        },
+        create: {
+          ...chapterData,
+          storyId,
+        },
+      });
+      return res.status(200).json(chapterData.id);
+    } else {
+      const newlyCreatedChapter = await prismaClient.chapter.create({
+        data: {
+          ...chapterData,
+          storyId,
+        },
+      });
+      return res.status(201).json(newlyCreatedChapter.id);
+    }
   })
 );
 

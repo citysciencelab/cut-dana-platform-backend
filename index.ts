@@ -5,9 +5,7 @@ import authRouter from "./routes/login.ts";
 import meRouter from "./routes/me.ts";
 import userRouter from "./routes/user.ts";
 import errorHandler from "./middlewares/errorHandlingMiddleware.ts";
-import chapterRouter from "./routes/Story/chapter.routes.ts";
 import storyRouter from "./routes/Story/story.routes.ts";
-import stepRouter from "./routes/Story/step.routes.ts";
 
 import "./extensions/RequestExtension.ts";
 
@@ -30,12 +28,12 @@ app.use((req, res, next) => {
         }
     }, HARD_TIMEOUT_MS);
     res.on("finish", () => clearTimeout(timer));
-    res.on("close",  () => clearTimeout(timer));
+    res.on("close", () => clearTimeout(timer));
     next();
 });
 
 app.use(cors())
-app.use(express.json({ limit: "10mb"}))
+app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true }));
 
 
@@ -43,8 +41,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/files", fileRoutes);
 app.use("/auth", authRouter);
 app.use('/stories', storyRouter);
-app.use('/stories', chapterRouter);
-app.use('/stories', stepRouter);
 app.use("/me", meRouter);
 app.use("/users", userRouter);
 
