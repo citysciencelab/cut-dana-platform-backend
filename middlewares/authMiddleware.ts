@@ -1,6 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getKeycloakRealm, getKeycloakUrl } from "../utils/keycloakAdmin";
 
+const ADMIN_ROLE = "admin" as const;
+
 /**
  * Creates a mock user for local development if authentication is disabled.
  */
@@ -57,6 +59,24 @@ async function introspectToken(token: string): Promise<any | null> {
     console.error("Token introspection error:", err);
     return null;
   }
+}
+
+export function isRequestFromAdmin(req: Request) {
+  const token = getTokenFromHeader(req.headers.authorization);
+  if (!token) {
+    return false;
+  }
+
+  return introspectToken(token).then((data) => {
+    if (!data) {
+      return false;
+    }
+    const roles = data.resource_access?.[process.env.KEYCLOAK_FRONTEND_CLIENT_ID!]?.roles;
+    return roles?.includes(ADMIN_ROLE);
+  }).catch((err) => {
+    console.error("Error checking admin role:", err);
+    return false;
+  });
 }
 
 /**

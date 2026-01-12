@@ -1,10 +1,9 @@
 import { Router, type Request, type Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import authMiddleware, { optionalAuthMiddleware } from "../../middlewares/authMiddleware";
+import authMiddleware, { optionalAuthMiddleware, isRequestFromAdmin } from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
 import { filesUpload } from "../../utils/minio";
-import { userIsOwnerOrAdmin, OwnedStory, PublishedStory } from "./DbFilters";
-import { userIsAdmin } from "../../types/User.ts";
+import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
 import type { GeoJSONAsset } from "../../prisma/interfaces.ts";
 import { minioClient } from "../../utils/minio";
 
@@ -118,7 +117,7 @@ storyRouter.post(
     const user = req.user!;
     const storyId = Number(req.params.storyId);
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       return res.status(403).json({ error: "You are not authorized to modify this story." });
     }
 
@@ -173,7 +172,7 @@ storyRouter.delete(
 
     let extraCheck = {};
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -224,7 +223,7 @@ storyRouter.post(
 
     let extraCheck = {};
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -251,7 +250,7 @@ storyRouter.delete(
 
     let extraCheck = {};
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -531,7 +530,7 @@ storyRouter.put(
       }>;
     };
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       const own = await prismaClient.story.findFirst({
         where: { id: storyId, owner: user.id },
         select: { id: true }
@@ -609,7 +608,7 @@ storyRouter.put(
       return res.status(400).json({ message: "isDraft must be boolean" });
     }
 
-    if (!userIsAdmin(user)) {
+    if (!isRequestFromAdmin(req)) {
       const own = await prismaClient.story.findFirst({
         where: { id: storyId, owner: user.id },
         select: { id: true },
@@ -640,7 +639,7 @@ storyRouter.post(
     const chapterData = req.body;
     const storyId = parseInt(req.params.storyId, 10);
 
-    if (!await userIsOwnerOrAdmin(storyId, user)) {
+    if (!await userOwnsStory(storyId, user.id) && !isRequestFromAdmin(req)) {
       return res
         .status(403)
         .json({ error: "You are not authorized to add chapters to this story." });
