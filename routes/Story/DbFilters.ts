@@ -1,5 +1,4 @@
 ﻿import { PrismaClient } from "@prisma/client"
-import { type User, userIsAdmin } from "../../types/User.ts";
 
 export const OwnedStory = (userId: string) => {
   return {
@@ -27,8 +26,4 @@ export const userOwnsStory = async (storyId: number, userId: string) => {
   });
 
   return (story && story.owner == userId)
-}
-
-export const userIsOwnerOrAdmin = async (storyId: number, user: User) => {
-  return userIsAdmin(user) || await userOwnsStory(storyId, user.id)
 }

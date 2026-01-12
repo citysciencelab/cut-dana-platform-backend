@@ -6,5 +6,3 @@
   scope?: string;
   roles?: string[] | string;
 }
-
-export const userIsAdmin = (user: User) => user.roles?.includes("admin");
