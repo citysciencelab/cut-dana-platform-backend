@@ -6,6 +6,7 @@ import { filesUpload } from "../../utils/minio";
 import { userIsOwnerOrAdmin, OwnedStory, PublishedStory } from "./DbFilters";
 import { userIsAdmin } from "../../types/User.ts";
 import type { GeoJSONAsset } from "../../prisma/interfaces.ts";
+import { minioClient } from "../../utils/minio";
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
@@ -238,6 +239,76 @@ storyRouter.post(
     });
 
     return res.status(201).json(newFile);
+  })
+);
+
+storyRouter.delete(
+  "/:storyId/cover",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const storyId = parseInt(req.params.storyId, 10);
+
+    let extraCheck = {};
+
+    if (!userIsAdmin(user)) {
+      extraCheck = OwnedStory(user.id);
+    }
+
+    const imageID = await prismaClient.story.findFirstOrThrow({
+      where: {
+        id: storyId,
+        ...extraCheck,
+      },
+      select: {
+        titleImageId: true,
+      },
+    });
+
+    if (!imageID.titleImageId) {
+      return res.status(404).json({ message: "No cover image to delete" });
+    }
+
+    const imageObject = await prismaClient.file.findFirstOrThrow({
+      where: {
+        id: imageID.titleImageId,
+      },
+    });
+
+    // delete image from bucket
+    try {
+      await minioClient.removeObject(imageObject.bucket, imageObject.key);
+    } catch (error) {
+      return res.status(500).json({ message: "Error deleting image from storage", error });
+    }
+
+    try {
+      // delete image from database
+      await prismaClient.file.delete({
+        where: {
+          id: imageID.titleImageId!,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Error deleting image from database", error });
+    }
+
+    try {
+      // remove image from story
+      await prismaClient.story.update({
+        where: {
+          id: storyId,
+          ...extraCheck,
+        },
+        data: {
+          titleImageId: null,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Error removing image from story", error });
+    }
+
+    return res.status(200).json();
   })
 );
 
