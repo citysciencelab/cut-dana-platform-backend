@@ -2,6 +2,11 @@ import { type Request, type Response, type NextFunction } from "express";
 import { getKeycloakRealm, getKeycloakUrl } from "../utils/keycloakAdmin";
 
 const ADMIN_ROLE = "admin" as const;
+const CLIENT_ID = process.env.KEYCLOAK_FRONTEND_CLIENT_ID!;
+
+if (!CLIENT_ID) {
+  throw new Error("KEYCLOAK_FRONTEND_CLIENT_ID environment variable is not set");
+}
 
 /**
  * Creates a mock user for local development if authentication is disabled.
@@ -71,7 +76,13 @@ export function isRequestFromAdmin(req: Request) {
     if (!data) {
       return false;
     }
-    const roles = data.resource_access?.[process.env.KEYCLOAK_FRONTEND_CLIENT_ID!]?.roles;
+
+    const realm_roles = data?.realm_access?.roles || [];
+    const client_roles = data?.resource_access?.[CLIENT_ID]?.roles || [];
+    const roles = [
+      ...realm_roles,
+      ...client_roles
+    ];
     return roles?.includes(ADMIN_ROLE);
   }).catch((err) => {
     console.error("Error checking admin role:", err);
@@ -89,7 +100,7 @@ function buildUserObject(data: any) {
     username: data.preferred_username,
     name: data.name,
     scope: data.scope,
-    roles: data.resource_access?.[process.env.KEYCLOAK_FRONTEND_CLIENT_ID!]?.roles,
+    roles: data.resource_access?.[CLIENT_ID]?.roles,
   };
 }
 
