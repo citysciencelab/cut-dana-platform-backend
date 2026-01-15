@@ -6,6 +6,9 @@ import { filesUpload } from "../../utils/minio";
 import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
 import type { GeoJSONAsset } from "../../prisma/interfaces.ts";
 import { minioClient } from "../../utils/minio";
+import { setupLogger } from '../../utils/logger.ts';
+
+const logger = setupLogger({ label: 'storyRouter' });
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
@@ -114,7 +117,6 @@ storyRouter.post(
   "/:storyId/featured/:boolean",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user!;
     const storyId = Number(req.params.storyId);
 
     if (!isRequestFromAdmin(req)) {
@@ -530,6 +532,9 @@ storyRouter.put(
       }>;
     };
 
+    logger.debug(`Updating story ${storyId} by user ${user.id}`);
+    logger.info(req.body);
+
     if (!isRequestFromAdmin(req)) {
       const own = await prismaClient.story.findFirst({
         where: { id: storyId, owner: user.id },
@@ -585,7 +590,7 @@ storyRouter.put(
               is3D: false,
               navigation3D: {},
               informationLayerIds: (s.informationLayerIds ?? []).map(String),
-              geoJsonAssets: s.geoJsonAssets ?? [],
+              geoJsonAssets: s.geoJsonAssets ?? []
             }
           });
         }
