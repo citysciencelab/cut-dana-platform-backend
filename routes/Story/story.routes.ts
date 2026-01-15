@@ -526,6 +526,27 @@ storyRouter.put(
             zoomLevel: number;
             backgroundMapId: string | null;
           };
+          mapSources: {
+            id: string;
+            name: string;
+            url: string;
+            typ: string;
+            layers: string[];
+            version: string;
+            visibility: boolean;
+            showInLayerTree: boolean;
+            opacity: number;
+            zIndex: number;
+            legendURL: string;
+            transparency: number;
+            infoFormat: string;
+            format: string;
+            gutter: number;
+            origin: number[];
+            singleTile: boolean;
+            tilesize: number;
+            transparent: boolean;
+          }[];
           informationLayerIds?: string[];
           geoJsonAssets?: GeoJSONAsset[];
         }>;
@@ -590,7 +611,8 @@ storyRouter.put(
               is3D: false,
               navigation3D: {},
               informationLayerIds: (s.informationLayerIds ?? []).map(String),
-              geoJsonAssets: s.geoJsonAssets ?? []
+              geoJsonAssets: s.geoJsonAssets ?? [],
+              mapSources: s.mapSources ?? [],
             }
           });
         }
