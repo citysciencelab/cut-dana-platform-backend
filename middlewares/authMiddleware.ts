@@ -1,5 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getKeycloakRealm, getKeycloakUrl } from "../utils/keycloakAdmin";
+import { setupLogger } from '../utils/logger.ts';
+
+const logger = setupLogger({ label: 'authMiddleware' });
 
 const ADMIN_ROLE = "admin" as const;
 const CLIENT_ID = process.env.KEYCLOAK_FRONTEND_CLIENT_ID!;
@@ -61,7 +64,7 @@ async function introspectToken(token: string): Promise<any | null> {
     // Return the entire data if active, otherwise null
     return data.active ? data : null;
   } catch (err) {
-    console.error("Token introspection error:", err);
+    logger.error("Token introspection error:", err);
     return null;
   }
 }

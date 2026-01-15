@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fetch from 'node-fetch';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
+import {setupLogger} from "../utils/logger.ts";
+
+const logger = setupLogger({ label: 'story.routes.test' });
 
 // This sample assumes your server is already running on port 8000.
 // If you need to spin up the app first, you could do so before running the tests.
@@ -15,7 +18,7 @@ test('GET /stories should return 200 with published stories', async (t) => {
   const status = response.status;
   const data = await response.json();
 
-  console.log('GET /stories response:', data);
+  logger.info('GET /stories response:', data);
   assert.equal(status, 200, 'Expected HTTP 200 response');
   // Additional assertions as needed
   // e.g., assert.ok(Array.isArray(data), 'Response body should be an array');
@@ -26,7 +29,7 @@ test('GET /stories/featured should return 200 with featured stories', async (t) 
   const status = response.status;
   const data = await response.json();
 
-  console.log('GET /stories/featured response:', data);
+  logger.info('GET /stories/featured response:', data);
   assert.equal(status, 200, 'Expected HTTP 200 response');
 });
 
@@ -35,7 +38,7 @@ test('GET /stories/popular should return 200 with popular stories', async (t) =>
   const status = response.status;
   const data = await response.json();
 
-  console.log('GET /stories/popular response:', data);
+  logger.info('GET /stories/popular response:', data);
   assert.equal(status, 200, 'Expected HTTP 200 response');
 });
 
@@ -47,7 +50,7 @@ test('GET /stories/mine → 200 or 401, depending on auth', async (t) => {
   const status = response.status;
   const data = await (status !== 401 ? response.json() : null);
 
-  console.log('GET /stories/mine response:', data);
+  logger.info('GET /stories/mine response:', data);
   // Expect 200 if successful (with a valid token), or 401 unauthorized if invalid
   assert.ok([200, 401].includes(status), 'Expected 200 (valid) or 401 (unauthorized)');
 });
@@ -61,7 +64,7 @@ test('GET /stories/:storyId → 200, 404, or 401', async (t) => {
   const status = response.status;
   const data = await (status === 200 ? response.json() : null);
 
-  console.log(`GET /stories/${storyId} response:`, data);
+  logger.info(`GET /stories/${storyId} response:`, data);
   // Could be 200 if found, or 404 if missing, or 401 if not allowed
   assert.ok([200, 404, 401].includes(status), 'Expected 200, 404, or 401');
 });
@@ -86,7 +89,7 @@ test('POST /stories → 201 or 401', async (t) => {
   const status = response.status;
   const data = await response.json();
 
-  console.log('POST /stories response:', data);
+  logger.info('POST /stories response:', data);
   // 201 if created successfully, 401 if unauthorized
   assert.ok([201, 401].includes(status), 'Expected 201 (created) or 401 (unauthorized)');
 });
@@ -102,7 +105,7 @@ test('POST /stories/draft → 201 or 401', async (t) => {
   const status = response.status;
   const data = await response.json();
 
-  console.log('POST /stories/draft response:', data);
+  logger.info('POST /stories/draft response:', data);
   assert.ok([201, 401].includes(status), 'Expected 201 or 401');
 });
 
@@ -127,7 +130,7 @@ test('PUT /stories/:storyId → 200, 404, or 401', async (t) => {
   const status = response.status;
   const data = await (status === 200 ? response.json() : null);
 
-  console.log(`PUT /stories/${storyId} response:`, data);
+  logger.info(`PUT /stories/${storyId} response:`, data);
   assert.ok([200, 404, 401].includes(status), 'Expected 200, 404, or 401');
 });
 
@@ -140,7 +143,7 @@ test('DELETE /stories/:storyId → 200, 404, or 401', async (t) => {
   const response = await fetch(`${BASE_URL}/stories/${storyId}`, {method: 'DELETE'});
 
   const status = response.status;
-  console.log(`DELETE /stories/${storyId} status:`, status);
+  logger.info(`DELETE /stories/${storyId} status:`, status);
 
   // 200 if deleted, 404 if not found, 401 if unauthorized
   assert.ok([200, 404, 401].includes(status), 'Expected 200, 404, or 401');
@@ -176,11 +179,11 @@ test('POST /stories/:storyId/cover → 201, 404, or 401', async (t) => {
   let data;
   if (status === 201) {
     data = await response.json();
-    console.log('Upload success:', data);
+    logger.info('Upload success:', data);
     // Example assertion: confirm file data was returned
     assert.ok(data?.id, 'Expected file record ID in response');
   } else {
-    console.log('Upload failed with status:', status);
+    logger.info('Upload failed with status:', status);
   }
 
   // Could be 201 (created), 401 (unauthorized), 404 (if story not found), etc.
@@ -192,5 +195,5 @@ test('POST /stories/:storyId/cover → 201, 404, or 401', async (t) => {
  */
 test('Teardown: disconnect Prisma', async (t) => {
   await prisma.$disconnect();
-  console.log('Prisma disconnected');
+  logger.info('Prisma disconnected');
 });
