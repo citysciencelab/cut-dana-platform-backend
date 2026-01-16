@@ -64,7 +64,7 @@ Authorization: Bearer {{user_token}}
                         "zoomLevel": 4,
                         "backgroundMapId": null
                     },
-                    "informationLayerIds": [],
+                    "informationLayers": [],
                     "mapSources": [],
                     "is3D": false,
                     "modelUrl": "",

@@ -4,7 +4,7 @@ import authMiddleware, { optionalAuthMiddleware, isRequestFromAdmin } from "../.
 import asyncHandler from "../../handlers/asyncHandler";
 import { filesUpload } from "../../utils/minio";
 import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
-import type { GeoJSONAsset } from "../../prisma/interfaces.ts";
+import type { GeoJSONAsset, InformationLayer } from "../../prisma/interfaces.ts";
 import { minioClient } from "../../utils/minio";
 
 const prismaClient = new PrismaClient();
@@ -339,7 +339,7 @@ storyRouter.post(
             zoomLevel: number;
             backgroundMapId: string;
           };
-          informationLayerIds?: string[];
+          informationLayers?: InformationLayer[];
           mapSources?: any[];
           geoJsonAssets?: GeoJSONAsset[];
         }>;
@@ -376,7 +376,7 @@ storyRouter.post(
                   is3D: step.is3D ?? false,
                   navigation3D: step.navigation3D ?? {},
                   modelUrl: step.modelUrl ?? "",
-                  informationLayerIds: (step.informationLayerIds ?? []).map(String),
+                  informationLayers: step.informationLayers ? step.informationLayers : [],
                   mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
                   geoJsonAssets: step.geoJsonAssets ? step.geoJsonAssets : [],
                 }))
@@ -473,7 +473,7 @@ storyRouter.get(
                 centerCoordinate: true,
                 zoomLevel: true,
                 backgroundMapId: true,
-                informationLayerIds: true,
+                informationLayers: true,
                 is3D: true,
                 navigation3D: true,
                 modelUrl: true,
@@ -524,7 +524,7 @@ storyRouter.put(
             zoomLevel: number;
             backgroundMapId: string | null;
           };
-          informationLayerIds?: string[];
+          informationLayers?: InformationLayer[];
           geoJsonAssets?: GeoJSONAsset[];
         }>;
       }>;
@@ -584,7 +584,7 @@ storyRouter.put(
               interactionAddons: [],
               is3D: false,
               navigation3D: {},
-              informationLayerIds: (s.informationLayerIds ?? []).map(String),
+              informationLayers: s.informationLayers ?? [],
               geoJsonAssets: s.geoJsonAssets ?? [],
             }
           });

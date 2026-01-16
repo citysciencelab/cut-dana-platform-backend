@@ -68,6 +68,11 @@ export type GeoJSONAsset = {
   geoJson: JsonValue;
 };
 
+export type InformationLayer = {
+  id: string;
+  attributes: JsonValue;
+}
+
 export interface StoryStep {
   id: number;
   stepNumber: number;
@@ -86,7 +91,7 @@ export interface StoryStep {
   datasources?: Datasource[];
   wmsLayers?: wmsLayer[];
   ThreeDFiles?: ThreeDFiles[];
-  informationLayerIds?: string[];
+  informationLayers?: InformationLayer[];
   geoJsonAssets: GeoJSONAsset[];
 }
 
