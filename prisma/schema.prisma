@@ -98,7 +98,7 @@ model StoryStep {
   datasources       Datasource[]
   wmsLayers         wmsLayer[]
   ThreeDFiles       ThreeDFiles[]
-  informationLayerIds String[]
+  informationLayers Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   modelUrl          String?
   geoJsonAssets      Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
