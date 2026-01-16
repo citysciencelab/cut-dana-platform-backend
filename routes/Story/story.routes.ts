@@ -6,6 +6,9 @@ import { filesUpload } from "../../utils/minio";
 import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
 import type { GeoJSONAsset, InformationLayer } from "../../prisma/interfaces.ts";
 import { minioClient } from "../../utils/minio";
+import { setupLogger } from '../../utils/logger.ts';
+
+const logger = setupLogger({ label: 'storyRouter' });
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
@@ -114,7 +117,6 @@ storyRouter.post(
   "/:storyId/featured/:boolean",
   authMiddleware,
   asyncHandler(async (req: Request, res: Response) => {
-    const user = req.user!;
     const storyId = Number(req.params.storyId);
 
     if (!isRequestFromAdmin(req)) {
@@ -524,11 +526,35 @@ storyRouter.put(
             zoomLevel: number;
             backgroundMapId: string | null;
           };
+          mapSources: {
+            id: string;
+            name: string;
+            url: string;
+            typ: string;
+            layers: string[];
+            version: string;
+            visibility: boolean;
+            showInLayerTree: boolean;
+            opacity: number;
+            zIndex: number;
+            legendURL: string;
+            transparency: number;
+            infoFormat: string;
+            format: string;
+            gutter: number;
+            origin: number[];
+            singleTile: boolean;
+            tilesize: number;
+            transparent: boolean;
+          }[];
           informationLayers?: InformationLayer[];
           geoJsonAssets?: GeoJSONAsset[];
         }>;
       }>;
     };
+
+    logger.debug(`Updating story ${storyId} by user ${user.id}`);
+    logger.info(req.body);
 
     if (!isRequestFromAdmin(req)) {
       const own = await prismaClient.story.findFirst({
@@ -586,6 +612,7 @@ storyRouter.put(
               navigation3D: {},
               informationLayers: s.informationLayers ?? [],
               geoJsonAssets: s.geoJsonAssets ?? [],
+              mapSources: s.mapSources ?? [],
             }
           });
         }
