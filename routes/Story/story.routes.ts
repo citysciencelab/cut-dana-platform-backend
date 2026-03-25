@@ -277,10 +277,12 @@ storyRouter.delete(
     });
 
     // delete image from bucket
-    try {
-      await minioClient.removeObject(imageObject.bucket, imageObject.key);
-    } catch (error) {
-      return res.status(500).json({ message: "Error deleting image from storage", error });
+    if (minioClient) {
+      try {
+        await minioClient.removeObject(imageObject.bucket, imageObject.key);
+      } catch (error) {
+        return res.status(500).json({ message: "Error deleting image from storage", error });
+      }
     }
 
     try {
