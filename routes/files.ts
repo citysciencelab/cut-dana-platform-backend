@@ -1,5 +1,5 @@
 ﻿import  {type Request, type Response, Router} from "express";
-import {filesUpload, signUrl} from "../utils/minio.ts";
+import {filesUpload, minioClient} from "../utils/minio.ts";
 import {PrismaClient} from "@prisma/client";
 import asyncHandler from "../handlers/asyncHandler.ts";
 
@@ -22,9 +22,9 @@ filesRouter.get('/*', asyncHandler(async (req: Request, res: Response) => {
         return res.status(404).json({})
     }
 
-    const signedUrl = await signUrl("get", data.key);
-
-    return res.redirect(signedUrl.toString())
+    const stream = await minioClient!.getObject(process.env.MINIO_BUCKET!, data.key);
+    res.setHeader('Content-Type', data.mimetype ?? 'application/octet-stream');
+    stream.pipe(res);
 }));
 
 filesRouter.post('/:context', filesUpload.single('files'), asyncHandler(async (req: Request, res: Response) => {
