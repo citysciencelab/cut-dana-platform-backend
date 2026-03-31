@@ -625,7 +625,17 @@ storyRouter.put(
       }
     });
 
-    return res.status(200).json({ success: true, message: "Updated story" });
+    const updatedStory = await prismaClient.story.findUnique({
+      where: { id: storyId },
+      include: {
+        chapters: {
+          orderBy: { sequence: "asc" },
+          include: { StoryStep: { orderBy: { stepNumber: "asc" } } }
+        }
+      }
+    });
+
+    return res.status(200).json(updatedStory);
   })
 );
 
