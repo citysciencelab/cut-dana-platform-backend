@@ -119,7 +119,7 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = Number(req.params.storyId);
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       return res.status(403).json({ error: "You are not authorized to modify this story." });
     }
 
@@ -174,7 +174,7 @@ storyRouter.delete(
 
     let extraCheck = {};
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -225,7 +225,7 @@ storyRouter.post(
 
     let extraCheck = {};
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -252,7 +252,7 @@ storyRouter.delete(
 
     let extraCheck = {};
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       extraCheck = OwnedStory(user.id);
     }
 
@@ -523,6 +523,9 @@ storyRouter.put(
         steps: Array<{
           title: string;
           description: string;
+          is3D?: boolean;
+          navigation3D?: any;
+          modelUrl?: string;
           mapConfig: {
             centerCoordinates: number[];
             zoomLevel: number;
@@ -558,7 +561,7 @@ storyRouter.put(
     logger.debug(`Updating story ${storyId} by user ${user.id}`);
     logger.info(req.body);
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       const own = await prismaClient.story.findFirst({
         where: { id: storyId, owner: user.id },
         select: { id: true }
@@ -610,8 +613,9 @@ storyRouter.put(
               zoomLevel: s.mapConfig.zoomLevel,
               backgroundMapId: s.mapConfig.backgroundMapId ?? "",
               interactionAddons: [],
-              is3D: false,
-              navigation3D: {},
+              is3D: s.is3D ?? false,
+              navigation3D: s.navigation3D ?? {},
+              modelUrl: s.modelUrl ?? "",
               informationLayers: s.informationLayers ?? [],
               geoJsonAssets: s.geoJsonAssets ?? [],
               mapSources: s.mapSources ?? [],
@@ -637,7 +641,7 @@ storyRouter.put(
       return res.status(400).json({ message: "isDraft must be boolean" });
     }
 
-    if (!isRequestFromAdmin(req)) {
+    if (!(await isRequestFromAdmin(req))) {
       const own = await prismaClient.story.findFirst({
         where: { id: storyId, owner: user.id },
         select: { id: true },
@@ -668,7 +672,7 @@ storyRouter.post(
     const chapterData = req.body;
     const storyId = parseInt(req.params.storyId, 10);
 
-    if (!await userOwnsStory(storyId, user.id) && !isRequestFromAdmin(req)) {
+    if (!await userOwnsStory(storyId, user.id) && !(await isRequestFromAdmin(req))) {
       return res
         .status(403)
         .json({ error: "You are not authorized to add chapters to this story." });
