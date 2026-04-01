@@ -411,6 +411,8 @@ storyRouter.post(
 
     const minioMetaData = req.file;
 
+    console.log(`[DEBUG] model-upload: storyId=${storyId}, stepId=${stepId}, req.file=`, minioMetaData ? `{ originalname: ${minioMetaData.originalname}, filename: ${minioMetaData.filename}, mimetype: ${minioMetaData.mimetype}, size: ${(minioMetaData as any).size} }` : 'undefined');
+
     if (!minioMetaData) {
       return res.status(500).json({
         message: "file not found",
@@ -436,6 +438,8 @@ storyRouter.post(
     let newFile = await prismaClient.file.create({ data: fileData });
 
     const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
+
+    console.log(`[DEBUG] model-upload: fileUrl=${fileUrl}, newFile.id=${newFile.id}`);
 
     await prismaClient.storyStep.update({
       where: { id: stepId },
