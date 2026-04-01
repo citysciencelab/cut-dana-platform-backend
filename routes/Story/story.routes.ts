@@ -336,7 +336,7 @@ storyRouter.post(
           visible?: boolean;
           is3D?: boolean;
           navigation3D?: any;
-          modelUrl?: string;
+          models3D?: any[];
           interactionAddons?: string[];
           mapConfig: {
             centerCoordinates: number[];
@@ -355,7 +355,7 @@ storyRouter.post(
     }
 
     const newStory = await prismaClient.$transaction(async (tx) => {
-      return tx.story.create({
+      return (tx.story as any).create({
         data: {
           title,
           description: description ?? "",
@@ -379,7 +379,7 @@ storyRouter.post(
                   interactionAddons: step.interactionAddons ?? [],
                   is3D: step.is3D ?? false,
                   navigation3D: step.navigation3D ?? {},
-                  modelUrl: step.modelUrl ?? "",
+                  models3D: Array.isArray(step.models3D) ? step.models3D : [],
                   informationLayers: step.informationLayers ? step.informationLayers : [],
                   mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
                   geoJsonAssets: step.geoJsonAssets ? step.geoJsonAssets : [],
@@ -408,20 +408,12 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = Number(req.params.storyId);
     const stepId = Number(req.params.stepId);
+    const entityId = req.query.entityId as string | undefined;
 
     const minioMetaData = req.file;
 
-    console.log(`[DEBUG] model-upload: storyId=${storyId}, stepId=${stepId}, req.file=`, minioMetaData ? `{ originalname: ${minioMetaData.originalname}, filename: ${minioMetaData.filename}, mimetype: ${minioMetaData.mimetype}, size: ${(minioMetaData as any).size} }` : 'undefined');
-
     if (!minioMetaData) {
-      return res.status(500).json({
-        message: "file not found",
-        status: 500,
-      });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: "file not found" });
+      return res.status(500).json({ message: "file not found", status: 500 });
     }
 
     const fileData = {
@@ -439,12 +431,24 @@ storyRouter.post(
 
     const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
 
-    console.log(`[DEBUG] model-upload: fileUrl=${fileUrl}, newFile.id=${newFile.id}`);
-
-    await prismaClient.storyStep.update({
-      where: { id: stepId },
-      data: { modelUrl: fileUrl }
-    });
+    if (entityId) {
+      // Update the matching models3D entry with the real fileUrl
+      const step = await (prismaClient.storyStep as any).findUnique({
+        where: { id: stepId },
+        select: { models3D: true },
+      });
+      const models3D: any[] = (step?.models3D as any[]) ?? [];
+      const idx = models3D.findIndex((m) => m.entityId === entityId);
+      if (idx >= 0) {
+        models3D[idx] = { ...models3D[idx], fileUrl };
+      } else {
+        models3D.push({ entityId, fileUrl });
+      }
+      await (prismaClient.storyStep as any).update({
+        where: { id: stepId },
+        data: { models3D },
+      });
+    }
 
     return res.status(201).json(newFile);
   })
@@ -456,7 +460,7 @@ storyRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = parseInt(req.params.storyId);
 
-    const raw = await prismaClient.story.findFirstOrThrow({
+    const raw = await (prismaClient.story as any).findFirstOrThrow({
       where: {
         id: storyId
       },
@@ -484,7 +488,7 @@ storyRouter.get(
                 informationLayers: true,
                 is3D: true,
                 navigation3D: true,
-                modelUrl: true,
+                models3D: true,
                 mapSources: true,
                 geoJsonAssets: true,
               }
@@ -499,7 +503,7 @@ storyRouter.get(
       title: raw.title,
       description: raw.description,
       titleImage: raw.titleImage,
-      chapters: raw.chapters.map(chap => {
+      chapters: (raw.chapters as any[]).map((chap: any) => {
         const { StoryStep, ...chapRest } = chap;
         return {
           ...chapRest,
@@ -529,7 +533,7 @@ storyRouter.put(
           description: string;
           is3D?: boolean;
           navigation3D?: any;
-          modelUrl?: string;
+          models3D?: any[];
           mapConfig: {
             centerCoordinates: number[];
             zoomLevel: number;
@@ -605,7 +609,7 @@ storyRouter.put(
         const steps = chap.steps ?? [];
         for (let i = 0; i < steps.length; i++) {
           const s = steps[i];
-          await tx.storyStep.create({
+          await (tx.storyStep as any).create({
             data: {
               chapterId: newChapter.id,
               stepNumber: i + 1,
@@ -619,7 +623,7 @@ storyRouter.put(
               interactionAddons: [],
               is3D: s.is3D ?? false,
               navigation3D: s.navigation3D ?? {},
-              modelUrl: s.modelUrl ?? "",
+              models3D: s.models3D ?? [],
               informationLayers: s.informationLayers ?? [],
               geoJsonAssets: s.geoJsonAssets ?? [],
               mapSources: s.mapSources ?? [],
