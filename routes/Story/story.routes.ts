@@ -7,6 +7,7 @@ import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
 import type { GeoJSONAsset, InformationLayer } from "../../prisma/interfaces.ts";
 import { minioClient } from "../../utils/minio";
 import { setupLogger } from '../../utils/logger.ts';
+import { deleteStoryWithResources } from "./deleteStoryWithResources.ts";
 
 const logger = setupLogger({ label: 'storyRouter' });
 
@@ -177,13 +178,19 @@ storyRouter.delete(
     if (!(await isRequestFromAdmin(req))) {
       extraCheck = OwnedStory(user.id);
     }
-
-    await prismaClient.story.delete({
-      where: {
+    try {
+      await deleteStoryWithResources(prismaClient, {
         id: storyId,
-        ...extraCheck
-      },
-    });
+        ...extraCheck,
+      });
+    }
+    catch (error) {
+      if (error instanceof Error && error.message === "Failed to delete story files from storage") {
+        return res.status(500).json({ message: error.message });
+      }
+
+      throw error;
+    }
 
     return res.status(200).json();
   })
