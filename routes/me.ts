@@ -2,8 +2,8 @@
 import authMiddleware from "../middlewares/authMiddleware.ts";
 import asyncHandler from "../handlers/asyncHandler.ts";
 import {getAdminToken, deleteKcUser} from "../utils/keycloakAdmin.ts";
-import {OwnedStory} from "./Story/DbFilters.ts";
 import {PrismaClient} from "@prisma/client";
+import { deleteStoryWithResources } from "./Story/deleteStoryWithResources.ts";
 
 const prismaClient = new PrismaClient();
 const meRouter = Router()
@@ -27,17 +27,24 @@ meRouter.delete('/',
         });
     }
 
-    const adminToken = await getAdminToken();
-
-    await deleteKcUser(userId, adminToken);
-
-    await prismaClient.story.deleteMany({
+    const ownedStories = await prismaClient.story.findMany({
       where: {
-        ...OwnedStory(userId)
-      }
+        owner: userId,
+      },
+      select: {
+        id: true,
+      },
     });
 
-    // TODO Delete files owned by the user from db and minIO
+    for (const story of ownedStories) {
+      await deleteStoryWithResources(prismaClient, {
+        id: story.id,
+        owner: userId,
+      });
+    }
+
+    const adminToken = await getAdminToken();
+    await deleteKcUser(userId, adminToken);
 
     res.status(204).send();
 }))
