@@ -65,7 +65,12 @@ app.use((req, res, next) => {
 });
 
 app.use(cors())
-app.use(express.json({ limit: "10mb" }))
+// Skip JSON body parsing for multipart/form-data (file uploads) — multer handles those
+app.use((req, res, next) => {
+  const ct = req.headers['content-type'] || '';
+  if (ct.startsWith('multipart/')) return next();
+  express.json({ limit: '10mb' })(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/stories', storyRouter);
