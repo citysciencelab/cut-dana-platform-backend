@@ -126,6 +126,7 @@ model Story {
   description   String
   author        String
   storyInterval Int       @default(10000)
+  scrollytelling Boolean   @default(false)
   titleImage    File?     @relation(fields: [titleImageId], references: [id])
   titleImageId  Int? // relation for file
   displayType   String? // maybe enum?

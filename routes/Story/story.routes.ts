@@ -330,9 +330,10 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
 
-    const { title, description, chapters } = req.body as {
+    const { title, description, chapters, scrollytelling } = req.body as {
       title: string;
       description: string;
+      scrollytelling?: boolean;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -366,6 +367,7 @@ storyRouter.post(
         data: {
           title,
           description: description ?? "",
+          scrollytelling: scrollytelling === true,
           author: user.id,
           owner: user.id,
           isDraft: true,
@@ -475,6 +477,7 @@ storyRouter.get(
         id: true,
         title: true,
         description: true,
+        scrollytelling: true,
         titleImage: true,
         chapters: {
           orderBy: { sequence: "asc" },
@@ -509,6 +512,7 @@ storyRouter.get(
       id: raw.id,
       title: raw.title,
       description: raw.description,
+      scrollytelling: raw.scrollytelling,
       titleImage: raw.titleImage,
       chapters: (raw.chapters as any[]).map((chap: any) => {
         const { StoryStep, ...chapRest } = chap;
@@ -532,6 +536,7 @@ storyRouter.put(
     const body = req.body as {
       title: string;
       description: string;
+      scrollytelling?: boolean;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -586,9 +591,13 @@ storyRouter.put(
     }
 
     await prismaClient.$transaction(async (tx) => {
-      await tx.story.update({
+      await (tx.story as any).update({
         where: { id: storyId },
-        data: { title: body.title, description: body.description ?? "" }
+        data: {
+          title: body.title,
+          description: body.description ?? "",
+          scrollytelling: body.scrollytelling === true
+        }
       });
 
       const chapterIds = await tx.chapter.findMany({

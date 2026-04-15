@@ -117,6 +117,7 @@ export interface Story {
   description: string;
   author: string;
   storyInterval: number;
+  scrollytelling: boolean;
   titleImage?: File | null;
   titleImageId: number | null;
   displayType: string | null;
