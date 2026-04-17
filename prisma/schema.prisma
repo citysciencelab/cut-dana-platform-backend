@@ -101,6 +101,7 @@ model StoryStep {
   informationLayers Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   mapSources  Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   models3D          Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
+  layers3D          Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
   geoJsonAssets      Json      @db.JsonB @default(dbgenerated("'[]'::jsonb"))
 }
 

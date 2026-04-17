@@ -345,6 +345,7 @@ storyRouter.post(
           is3D?: boolean;
           navigation3D?: any;
           models3D?: any[];
+          layers3D?: any[];
           interactionAddons?: string[];
           mapConfig: {
             centerCoordinates: number[];
@@ -389,6 +390,7 @@ storyRouter.post(
                   is3D: step.is3D ?? false,
                   navigation3D: step.navigation3D ?? {},
                   models3D: Array.isArray(step.models3D) ? step.models3D : [],
+                  layers3D: Array.isArray(step.layers3D) ? step.layers3D : [],
                   informationLayers: step.informationLayers ? step.informationLayers : [],
                   mapSources: Array.isArray(step.mapSources) ? step.mapSources : [],
                   geoJsonAssets: step.geoJsonAssets ? step.geoJsonAssets : [],
@@ -499,6 +501,7 @@ storyRouter.get(
                 is3D: true,
                 navigation3D: true,
                 models3D: true,
+                layers3D: true,
                 mapSources: true,
                 geoJsonAssets: true,
               }
@@ -546,6 +549,7 @@ storyRouter.put(
           is3D?: boolean;
           navigation3D?: any;
           models3D?: any[];
+          layers3D?: any[];
           mapConfig: {
             centerCoordinates: number[];
             zoomLevel: number;
@@ -640,6 +644,7 @@ storyRouter.put(
               is3D: s.is3D ?? false,
               navigation3D: s.navigation3D ?? {},
               models3D: s.models3D ?? [],
+              layers3D: s.layers3D ?? [],
               informationLayers: s.informationLayers ?? [],
               geoJsonAssets: s.geoJsonAssets ?? [],
               mapSources: s.mapSources ?? [],
