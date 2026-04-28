@@ -1,22 +1,21 @@
-import { Router, type Request, type Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import authMiddleware, { optionalAuthMiddleware, isRequestFromAdmin } from "../../middlewares/authMiddleware";
+import {type Request, type Response, Router} from "express";
+import {Prisma, PrismaClient} from "@prisma/client";
+import authMiddleware, {isRequestFromAdmin, optionalAuthMiddleware} from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
-import { filesUpload } from "../../utils/minio";
-import { userOwnsStory, OwnedStory, PublishedStory } from "./DbFilters";
-import type { GeoJSONAsset, InformationLayer } from "../../prisma/interfaces.ts";
-import { minioClient } from "../../utils/minio";
-import { setupLogger } from '../../utils/logger.ts';
-import { deleteStoryWithResources } from "./deleteStoryWithResources.ts";
+import {filesUpload, minioClient} from "../../utils/minio";
+import {OwnedStory, PublishedStory, userOwnsStory} from "./DbFilters";
+import type {GeoJSONAsset, InformationLayer} from "../../prisma/interfaces.ts";
+import {setupLogger} from '../../utils/logger.ts';
+import {deleteStoryWithResources} from "./deleteStoryWithResources.ts";
 
-const logger = setupLogger({ label: 'storyRouter' });
+const logger = setupLogger({label: 'storyRouter'});
 
 const prismaClient = new PrismaClient();
 const storyRouter = Router();
 
 const includeAll = {
   titleImage: true,
-  chapters: { include: { StoryStep: true } }
+  chapters: {include: {StoryStep: true}}
 }
 
 /**
@@ -106,7 +105,7 @@ storyRouter.post(
       owner: user.id,
     };
 
-    const newStory = await prismaClient.story.create({ data: storyData });
+    const newStory = await prismaClient.story.create({data: storyData});
     return res.status(201).json(newStory.id);
   })
 );
@@ -121,18 +120,18 @@ storyRouter.post(
     const storyId = Number(req.params.storyId);
 
     if (!(await isRequestFromAdmin(req))) {
-      return res.status(403).json({ error: "You are not authorized to modify this story." });
+      return res.status(403).json({error: "You are not authorized to modify this story."});
     }
 
     const raw = String(req.params.boolean).toLowerCase();
     if (raw !== "true" && raw !== "false") {
-      return res.status(400).json({ error: "Boolean must be 'true' or 'false'." });
+      return res.status(400).json({error: "Boolean must be 'true' or 'false'."});
     }
     const featured = raw === "true";
 
     const updated = await prismaClient.story.update({
-      where: { id: storyId },
-      data: { featured },
+      where: {id: storyId},
+      data: {featured},
     });
 
     return res.status(200).json(updated);
@@ -147,7 +146,7 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = parseInt(req.params.storyId, 10);
     if (!storyId || isNaN(storyId)) {
-      return res.status(400).json({ error: "Invalid story ID" });
+      return res.status(400).json({error: "Invalid story ID"});
     }
 
     await prismaClient.story.update({
@@ -155,7 +154,7 @@ storyRouter.post(
         id: storyId,
       },
       data: {
-        views: { increment: 1 }
+        views: {increment: 1}
       },
     });
 
@@ -183,10 +182,9 @@ storyRouter.delete(
         id: storyId,
         ...extraCheck,
       });
-    }
-    catch (error) {
+    } catch (error) {
       if (error instanceof Error && error.message === "Failed to delete story files from storage") {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({message: error.message});
       }
 
       throw error;
@@ -228,7 +226,7 @@ storyRouter.post(
     };
 
 
-    let newFile = await prismaClient.file.create({ data: fileData });
+    let newFile = await prismaClient.file.create({data: fileData});
 
     let extraCheck = {};
 
@@ -274,7 +272,7 @@ storyRouter.delete(
     });
 
     if (!imageID.titleImageId) {
-      return res.status(404).json({ message: "No cover image to delete" });
+      return res.status(404).json({message: "No cover image to delete"});
     }
 
     const imageObject = await prismaClient.file.findFirstOrThrow({
@@ -288,7 +286,7 @@ storyRouter.delete(
       try {
         await minioClient.removeObject(imageObject.bucket, imageObject.key);
       } catch (error) {
-        return res.status(500).json({ message: "Error deleting image from storage", error });
+        return res.status(500).json({message: "Error deleting image from storage", error});
       }
     }
 
@@ -300,7 +298,7 @@ storyRouter.delete(
         },
       });
     } catch (error) {
-      return res.status(500).json({ message: "Error deleting image from database", error });
+      return res.status(500).json({message: "Error deleting image from database", error});
     }
 
     try {
@@ -315,7 +313,7 @@ storyRouter.delete(
         },
       });
     } catch (error) {
-      return res.status(500).json({ message: "Error removing image from story", error });
+      return res.status(500).json({message: "Error removing image from story", error});
     }
 
     return res.status(200).json();
@@ -330,7 +328,7 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
 
-    const { title, description, chapters, scrollytelling } = req.body as {
+    const {title, description, chapters, scrollytelling} = req.body as {
       title: string;
       description: string;
       scrollytelling?: boolean;
@@ -360,7 +358,7 @@ storyRouter.post(
     };
 
     if (!Array.isArray(chapters)) {
-      return res.status(400).json({ error: "chapters must be an array" });
+      return res.status(400).json({error: "chapters must be an array"});
     }
 
     const newStory = await prismaClient.$transaction(async (tx) => {
@@ -401,7 +399,7 @@ storyRouter.post(
         },
         include: {
           chapters: {
-            include: { StoryStep: true }
+            include: {StoryStep: true}
           }
         }
       });
@@ -424,7 +422,7 @@ storyRouter.post(
     const minioMetaData = req.file;
 
     if (!minioMetaData) {
-      return res.status(500).json({ message: "file not found", status: 500 });
+      return res.status(500).json({message: "file not found", status: 500});
     }
 
     const fileData = {
@@ -438,26 +436,26 @@ storyRouter.post(
       providerMetaData: JSON.stringify(minioMetaData),
     };
 
-    let newFile = await prismaClient.file.create({ data: fileData });
+    let newFile = await prismaClient.file.create({data: fileData});
 
     const fileUrl = `files/${fileData.fileContext}/${fileData.filename}`;
 
     if (entityId) {
       // Update the matching models3D entry with the real fileUrl
       const step = await (prismaClient.storyStep as any).findUnique({
-        where: { id: stepId },
-        select: { models3D: true },
+        where: {id: stepId},
+        select: {models3D: true},
       });
       const models3D: any[] = (step?.models3D as any[]) ?? [];
       const idx = models3D.findIndex((m) => m.entityId === entityId);
       if (idx >= 0) {
-        models3D[idx] = { ...models3D[idx], fileUrl };
+        models3D[idx] = {...models3D[idx], fileUrl};
       } else {
-        models3D.push({ entityId, fileUrl });
+        models3D.push({entityId, fileUrl});
       }
       await (prismaClient.storyStep as any).update({
-        where: { id: stepId },
-        data: { models3D },
+        where: {id: stepId},
+        data: {models3D},
       });
     }
 
@@ -482,13 +480,13 @@ storyRouter.get(
         scrollytelling: true,
         titleImage: true,
         chapters: {
-          orderBy: { sequence: "asc" },
+          orderBy: {sequence: "asc"},
           select: {
             id: true,
             name: true,
             sequence: true,
             StoryStep: {
-              orderBy: { stepNumber: "asc" },
+              orderBy: {stepNumber: "asc"},
               select: {
                 id: true,
                 stepNumber: true,
@@ -518,7 +516,7 @@ storyRouter.get(
       scrollytelling: raw.scrollytelling,
       titleImage: raw.titleImage,
       chapters: (raw.chapters as any[]).map((chap: any) => {
-        const { StoryStep, ...chapRest } = chap;
+        const {StoryStep, ...chapRest} = chap;
         return {
           ...chapRest,
           steps: StoryStep
@@ -587,16 +585,16 @@ storyRouter.put(
 
     if (!(await isRequestFromAdmin(req))) {
       const own = await prismaClient.story.findFirst({
-        where: { id: storyId, owner: user.id },
-        select: { id: true }
+        where: {id: storyId, owner: user.id},
+        select: {id: true}
       });
 
-      if (!own) return res.status(403).json({ message: "Forbidden" });
+      if (!own) return res.status(403).json({message: "Forbidden"});
     }
 
     await prismaClient.$transaction(async (tx) => {
       await (tx.story as any).update({
-        where: { id: storyId },
+        where: {id: storyId},
         data: {
           title: body.title,
           description: body.description ?? "",
@@ -605,15 +603,15 @@ storyRouter.put(
       });
 
       const chapterIds = await tx.chapter.findMany({
-        where: { storyId },
-        select: { id: true }
+        where: {storyId},
+        select: {id: true}
       });
 
       if (chapterIds.length) {
         await tx.storyStep.deleteMany({
-          where: { chapterId: { in: chapterIds.map(c => c.id) } }
+          where: {chapterId: {in: chapterIds.map(c => c.id)}}
         });
-        await tx.chapter.deleteMany({ where: { storyId } });
+        await tx.chapter.deleteMany({where: {storyId}});
       }
 
       for (const chap of body.chapters ?? []) {
@@ -623,7 +621,7 @@ storyRouter.put(
             name: chap.title,
             sequence: chap.sequence,
           },
-          select: { id: true }
+          select: {id: true}
         });
 
         const steps = chap.steps ?? [];
@@ -655,11 +653,11 @@ storyRouter.put(
     });
 
     const updatedStory = await prismaClient.story.findUnique({
-      where: { id: storyId },
+      where: {id: storyId},
       include: {
         chapters: {
-          orderBy: { sequence: "asc" },
-          include: { StoryStep: { orderBy: { stepNumber: "asc" } } }
+          orderBy: {sequence: "asc"},
+          include: {StoryStep: {orderBy: {stepNumber: "asc"}}}
         }
       }
     });
@@ -674,22 +672,22 @@ storyRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
     const storyId = parseInt(req.params.storyId, 10);
-    const { isDraft } = (req.body ?? {}) as { isDraft?: boolean };
+    const {isDraft} = (req.body ?? {}) as { isDraft?: boolean };
 
     if (typeof isDraft !== "boolean") {
-      return res.status(400).json({ message: "isDraft must be boolean" });
+      return res.status(400).json({message: "isDraft must be boolean"});
     }
 
     if (!(await isRequestFromAdmin(req))) {
       const own = await prismaClient.story.findFirst({
-        where: { id: storyId, owner: user.id },
-        select: { id: true },
+        where: {id: storyId, owner: user.id},
+        select: {id: true},
       });
-      if (!own) return res.status(403).json({ message: "Forbidden" });
+      if (!own) return res.status(403).json({message: "Forbidden"});
     }
 
     const updated = await prismaClient.story.update({
-      where: { id: storyId },
+      where: {id: storyId},
       data: {
         isDraft,
       },
@@ -714,7 +712,7 @@ storyRouter.post(
     if (!await userOwnsStory(storyId, user.id) && !(await isRequestFromAdmin(req))) {
       return res
         .status(403)
-        .json({ error: "You are not authorized to add chapters to this story." });
+        .json({error: "You are not authorized to add chapters to this story."});
     }
 
     // If 'id' is provided, update; otherwise create
@@ -742,6 +740,221 @@ storyRouter.post(
         },
       });
       return res.status(201).json(newlyCreatedChapter.id);
+    }
+  })
+);
+
+/**
+ * Copy a complete story (admin only).
+ * Creates a full deep copy of the story (chapters, steps, images, 3D models) under the admin's account.
+ */
+storyRouter.post(
+  "/new/:storyId/copy",
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user!;
+    const storyId = parseInt(req.params.storyId, 10);
+
+    if (!(await isRequestFromAdmin(req))) {
+      return res.status(403).json({error: "Only admins can copy stories."});
+    }
+
+    const original = await prismaClient.story.findFirst({
+      where: {id: storyId},
+      include: {
+        titleImage: true,
+        chapters: {
+          orderBy: {sequence: "asc"},
+          include: {
+            StoryStep: {
+              orderBy: {stepNumber: "asc"},
+            },
+          },
+        },
+      },
+    });
+
+    if (!original) {
+      return res.status(404).json({error: "Story not found."});
+    }
+
+    const bucket = process.env.MINIO_BUCKET ?? "";
+    const copiedMinioKeys: Array<{ key: string }> = [];
+
+    const copyMinioFile = async (srcBucket: string, srcKey: string): Promise<string> => {
+      if (!minioClient) return "";
+      const destKey = `${Date.now()}-${srcKey.split("/").pop()}`;
+      await minioClient.copyObject(bucket, destKey, `/${srcBucket}/${srcKey}`);
+      copiedMinioKeys.push({key: destKey});
+      return destKey;
+    };
+
+    let newStory: any = null;
+
+    try {
+      newStory = await prismaClient.story.create({
+        data: {
+          title: original.title,
+          description: original.description,
+          scrollytelling: original.scrollytelling,
+          storyInterval: original.storyInterval,
+          author: user.id,
+          owner: user.id,
+          isDraft: true,
+        },
+      });
+
+      for (const chapter of original.chapters) {
+        const newChapter = await prismaClient.chapter.create({
+          data: {
+            storyId: newStory.id,
+            name: chapter.name,
+            sequence: chapter.sequence,
+          },
+        });
+
+        for (const step of chapter.StoryStep) {
+          const originalModels3D = (step.models3D as any[]) ?? [];
+
+          // Create the step first with cleared fileUrls to avoid cross-story file coupling
+          const clearedModels3D = originalModels3D.map((m: any) => ({...m, fileUrl: ""}));
+
+          const newStep = await (prismaClient.storyStep as any).create({
+            data: {
+              chapterId: newChapter.id,
+              stepNumber: step.stepNumber,
+              stepWidth: step.stepWidth,
+              visible: step.visible,
+              title: step.title,
+              html: step.html,
+              centerCoordinate: step.centerCoordinate,
+              zoomLevel: step.zoomLevel,
+              backgroundMapId: step.backgroundMapId,
+              interactionAddons: step.interactionAddons,
+              is3D: step.is3D,
+              navigation3D: step.navigation3D,
+              layers3D: step.layers3D,
+              informationLayers: step.informationLayers,
+              mapSources: step.mapSources,
+              geoJsonAssets: step.geoJsonAssets,
+              models3D: clearedModels3D,
+            },
+          });
+
+          // Copy 3D model files and update fileUrls in the new step
+          if (originalModels3D.length > 0) {
+            const newModels3D = [...clearedModels3D];
+
+            for (let i = 0; i < originalModels3D.length; i++) {
+              const model = originalModels3D[i];
+              if (!model.fileUrl) continue;
+
+              // fileUrl format: "files/stories/{storyId}/steps/{stepId}/{filename}"
+              const urlPath = (model.fileUrl as string).replace(/^files\//, "");
+              const parts = urlPath.split("/");
+              const filename = parts[parts.length - 1];
+              const fileContext = parts.slice(0, -1).join("/");
+
+              const fileRecord = await prismaClient.file.findFirst({
+                where: {fileContext, filename},
+              });
+
+              if (!fileRecord) continue;
+
+              const newFileContext = `stories/${newStory.id}/steps/${newStep.id}`;
+              let newKey = "";
+
+              if (minioClient && bucket) {
+                newKey = await copyMinioFile(fileRecord.bucket, fileRecord.key);
+              }
+
+              await prismaClient.file.create({
+                data: {
+                  bucket: bucket || fileRecord.bucket,
+                  fileContext: newFileContext,
+                  filename,
+                  key: newKey || fileRecord.key,
+                  provider: fileRecord.provider,
+                  providerMetaData:
+                    fileRecord.providerMetaData === null
+                      ? Prisma.JsonNull
+                      : (fileRecord.providerMetaData as Prisma.InputJsonValue),
+                  mimetype: fileRecord.mimetype,
+                  encoding: fileRecord.encoding,
+                },
+              });
+
+              newModels3D[i] = {
+                ...model,
+                fileUrl: `files/${newFileContext}/${filename}`,
+              };
+            }
+
+            await (prismaClient.storyStep as any).update({
+              where: {id: newStep.id},
+              data: {models3D: newModels3D},
+            });
+          }
+        }
+      }
+
+      // Copy title image
+      if (original.titleImage && bucket) {
+        const fi = original.titleImage;
+        const newFileContext = `stories/${newStory.id}`;
+        let newKey = fi.key;
+
+        if (minioClient) {
+          newKey = await copyMinioFile(fi.bucket, fi.key);
+        }
+
+        const newFile = await prismaClient.file.create({
+          data: {
+            bucket: bucket || fi.bucket,
+            fileContext: newFileContext,
+            filename: fi.filename,
+            key: newKey,
+            provider: fi.provider,
+            providerMetaData:
+              fi.providerMetaData === null
+                ? Prisma.JsonNull
+                : (fi.providerMetaData as Prisma.InputJsonValue),
+            mimetype: fi.mimetype,
+            encoding: fi.encoding,
+          },
+        });
+
+        await prismaClient.story.update({
+          where: {id: newStory.id},
+          data: {titleImageId: newFile.id},
+        });
+      }
+
+      return res.status(201).json({id: newStory.id});
+    } catch (error) {
+      logger.error("Error copying story:", error);
+
+      // Compensating cleanup: delete the partially created story (cascade handles chapters/steps)
+      if (newStory) {
+        try {
+          await prismaClient.story.delete({where: {id: newStory.id}});
+        } catch (cleanupError) {
+          logger.error("Error cleaning up new story after failed copy:", cleanupError);
+        }
+      }
+
+      // Compensating cleanup: remove any copied MinIO objects
+      if (minioClient && copiedMinioKeys.length > 0) {
+        for (const {key} of copiedMinioKeys) {
+          try {
+            await minioClient.removeObject(bucket, key);
+          } catch (cleanupError) {
+            logger.error(`Error removing copied MinIO object ${key}:`, cleanupError);
+          }
+        }
+      }
+
+      return res.status(500).json({error: "Failed to copy story."});
     }
   })
 );
