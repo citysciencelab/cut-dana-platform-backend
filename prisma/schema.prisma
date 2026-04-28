@@ -139,9 +139,11 @@ model Story {
   owner       String // user Id from keycloak
   private     Boolean   @default(false)
   sharedWith  String[] // user Ids from keycloak
-  featured    Boolean   @default(false)
-  views       Int       @default(0)
-  isDraft     Boolean   @default(true)
+  featured     Boolean   @default(false)
+  views        Int       @default(0)
+  isDraft      Boolean   @default(true)
+  playerWidth  Int?
+  playerHeight Int?
 }
 
 model KeycloakSetup {

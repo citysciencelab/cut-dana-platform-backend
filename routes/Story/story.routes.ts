@@ -328,10 +328,12 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
 
-    const {title, description, chapters, scrollytelling} = req.body as {
+    const {title, description, chapters, scrollytelling, playerWidth, playerHeight} = req.body as {
       title: string;
       description: string;
       scrollytelling?: boolean;
+      playerWidth?: number;
+      playerHeight?: number;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -367,6 +369,8 @@ storyRouter.post(
           title,
           description: description ?? "",
           scrollytelling: scrollytelling === true,
+          playerWidth: typeof playerWidth === 'number' ? playerWidth : null,
+          playerHeight: typeof playerHeight === 'number' ? playerHeight : null,
           author: user.id,
           owner: user.id,
           isDraft: true,
@@ -478,6 +482,8 @@ storyRouter.get(
         title: true,
         description: true,
         scrollytelling: true,
+        playerWidth: true,
+        playerHeight: true,
         titleImage: true,
         chapters: {
           orderBy: {sequence: "asc"},
@@ -514,6 +520,8 @@ storyRouter.get(
       title: raw.title,
       description: raw.description,
       scrollytelling: raw.scrollytelling,
+      playerWidth: raw.playerWidth ?? null,
+      playerHeight: raw.playerHeight ?? null,
       titleImage: raw.titleImage,
       chapters: (raw.chapters as any[]).map((chap: any) => {
         const {StoryStep, ...chapRest} = chap;
@@ -538,6 +546,8 @@ storyRouter.put(
       title: string;
       description: string;
       scrollytelling?: boolean;
+      playerWidth?: number | null;
+      playerHeight?: number | null;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -598,7 +608,9 @@ storyRouter.put(
         data: {
           title: body.title,
           description: body.description ?? "",
-          scrollytelling: body.scrollytelling === true
+          scrollytelling: body.scrollytelling === true,
+          playerWidth: typeof body.playerWidth === 'number' ? body.playerWidth : null,
+          playerHeight: typeof body.playerHeight === 'number' ? body.playerHeight : null,
         }
       });
 
@@ -794,10 +806,12 @@ storyRouter.post(
     try {
       newStory = await prismaClient.story.create({
         data: {
-          title: original.title,
+          title: `${original.title} - Copy`,
           description: original.description,
           scrollytelling: original.scrollytelling,
           storyInterval: original.storyInterval,
+          playerWidth: original.playerWidth,
+          playerHeight: original.playerHeight,
           author: user.id,
           owner: user.id,
           isDraft: true,
