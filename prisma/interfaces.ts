@@ -118,6 +118,8 @@ export interface Story {
   author: string;
   storyInterval: number;
   scrollytelling: boolean;
+  playerWidth: number,
+  playerHeight: number,
   titleImage?: File | null;
   titleImageId: number | null;
   displayType: string | null;
