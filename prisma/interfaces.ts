@@ -118,6 +118,7 @@ export interface Story {
   author: string;
   storyInterval: number;
   autoplayEnabled: boolean;
+  hideBackButton: boolean;
   scrollytelling: boolean;
   playerWidth: number | null,
   playerHeight: number | null,

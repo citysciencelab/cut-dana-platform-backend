@@ -328,7 +328,7 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
 
-    const {title, description, chapters, scrollytelling, playerWidth, playerHeight, autoplayEnabled, autoplayIntervalSec} = req.body as {
+    const {title, description, chapters, scrollytelling, playerWidth, playerHeight, autoplayEnabled, autoplayIntervalSec, hideBackButton} = req.body as {
       title: string;
       description: string;
       scrollytelling?: boolean;
@@ -336,6 +336,7 @@ storyRouter.post(
       playerHeight?: number;
       autoplayEnabled?: boolean;
       autoplayIntervalSec?: number;
+      hideBackButton?: boolean;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -374,6 +375,7 @@ storyRouter.post(
             ? Math.max(1000, Math.floor(autoplayIntervalSec * 1000))
             : 10000,
           autoplayEnabled: autoplayEnabled === true,
+          hideBackButton: hideBackButton === true,
           scrollytelling: scrollytelling === true,
           playerWidth: typeof playerWidth === 'number' ? playerWidth : null,
           playerHeight: typeof playerHeight === 'number' ? playerHeight : null,
@@ -489,6 +491,7 @@ storyRouter.get(
         description: true,
         storyInterval: true,
         autoplayEnabled: true,
+        hideBackButton: true,
         scrollytelling: true,
         playerWidth: true,
         playerHeight: true,
@@ -529,6 +532,7 @@ storyRouter.get(
       description: raw.description,
       autoplayEnabled: raw.autoplayEnabled === true,
       autoplayIntervalSec: Math.max(1, Math.round((raw.storyInterval ?? 10000) / 1000)),
+      hideBackButton: raw.hideBackButton === true,
       scrollytelling: raw.scrollytelling,
       playerWidth: raw.playerWidth ?? null,
       playerHeight: raw.playerHeight ?? null,
@@ -560,6 +564,7 @@ storyRouter.put(
       playerHeight?: number | null;
       autoplayEnabled?: boolean;
       autoplayIntervalSec?: number;
+      hideBackButton?: boolean;
       chapters: Array<{
         title: string;
         sequence: number;
@@ -624,6 +629,7 @@ storyRouter.put(
             ? Math.max(1000, Math.floor(body.autoplayIntervalSec * 1000))
             : 10000,
           autoplayEnabled: body.autoplayEnabled === true,
+          hideBackButton: body.hideBackButton === true,
           scrollytelling: body.scrollytelling === true,
           playerWidth: typeof body.playerWidth === 'number' ? body.playerWidth : null,
           playerHeight: typeof body.playerHeight === 'number' ? body.playerHeight : null,
@@ -825,6 +831,7 @@ storyRouter.post(
           title: `${original.title} - Copy`,
           description: original.description,
           autoplayEnabled: original.autoplayEnabled,
+          hideBackButton: original.hideBackButton,
           scrollytelling: original.scrollytelling,
           storyInterval: original.storyInterval,
           playerWidth: original.playerWidth,

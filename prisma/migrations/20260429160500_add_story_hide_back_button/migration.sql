@@ -1,0 +1,1 @@
+ALTER TABLE "Story" ADD COLUMN "hideBackButton" BOOLEAN NOT NULL DEFAULT false;
