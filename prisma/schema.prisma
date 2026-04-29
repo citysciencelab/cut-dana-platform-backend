@@ -127,6 +127,7 @@ model Story {
   description   String
   author        String
   storyInterval Int       @default(10000)
+  autoplayEnabled Boolean @default(false)
   scrollytelling Boolean   @default(false)
   titleImage    File?     @relation(fields: [titleImageId], references: [id])
   titleImageId  Int? // relation for file

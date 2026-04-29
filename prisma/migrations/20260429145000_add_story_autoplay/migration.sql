@@ -1,0 +1,1 @@
+ALTER TABLE "Story" ADD COLUMN "autoplayEnabled" BOOLEAN NOT NULL DEFAULT false;
