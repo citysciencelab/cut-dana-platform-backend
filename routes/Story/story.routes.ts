@@ -481,6 +481,27 @@ storyRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const storyId = parseInt(req.params.storyId);
 
+    const meta = await prismaClient.story.findUnique({
+      where: {id: storyId},
+      select: {isDraft: true, private: true, owner: true, sharedWith: true},
+    });
+
+    if (!meta) {
+      return res.status(404).json({message: "Story not found"});
+    }
+
+    const userId = req.user?.id;
+    const isOwner = userId && meta.owner === userId;
+    const isAdmin = await isRequestFromAdmin(req);
+
+    if (meta.isDraft && !isOwner && !isAdmin) {
+      return res.status(404).json({message: "Story not found"});
+    }
+
+    if (meta.private && !isOwner && !isAdmin && !(userId && meta.sharedWith.includes(userId))) {
+      return res.status(403).json({message: "This story is private"});
+    }
+
     const raw = await (prismaClient.story as any).findFirstOrThrow({
       where: {
         id: storyId
