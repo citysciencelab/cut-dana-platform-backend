@@ -13,18 +13,9 @@ export const minioClient: Client | null = localOnly ? null : new Client({
     region: process.env.MINIO_REGION || 'garage',
 });
 
-export const filesUpload = localOnly
-    ? multer({ storage: multer.memoryStorage() })
-    : multer({
-        storage: new MinioStorageEngine(minioClient!, process.env.MINIO_BUCKET!, {
-            object: {
-                name: (_, file) => {
-                    return `${Date.now()}-${file.originalname}`;
-                },
-                useOriginalFilename: false
-            }
-        })
-    });
+// Always use memory storage — upload to MinIO manually in the route handler
+// so errors are visible and req.file is always populated when a file is present.
+export const filesUpload = multer({ storage: multer.memoryStorage() });
 
 export async function signUrl(httpMethod: string, key: string) {
     if (!minioClient) {

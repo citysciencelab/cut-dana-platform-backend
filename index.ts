@@ -7,7 +7,8 @@ import "./extensions/RequestExtension.ts";
 
 const localOnly = process.env.LOCAL_ONLY_DB === 'true';
 
-const {default: fileRoutes} = localOnly ? {default: null} : await import("./routes/files");
+// files route works in all modes (localOnly skips actual MinIO upload)
+const {default: fileRoutes} = await import("./routes/files");
 const {default: authRouter} = localOnly ? {default: null} : await import("./routes/login.ts");
 const {default: meRouter} = localOnly ? {default: null} : await import("./routes/me.ts");
 const {default: userRouter} = localOnly ? {default: null} : await import("./routes/user.ts");
@@ -64,18 +65,17 @@ app.use((req, res, next) => {
 });
 
 app.use(cors())
-// Skip JSON body parsing for multipart/form-data (file uploads) — multer handles those
-app.use((req, res, next) => {
-  const ct = req.headers['content-type'] || '';
-  if (ct.startsWith('multipart/')) return next();
-  express.json({limit: '50mb'})(req, res, next);
-});
-app.use(express.urlencoded({extended: true}));
+
+// Register file upload routes BEFORE body-parsing middleware so multer handles
+// multipart/form-data requests before body-parser ever sees them.
+app.use("/files", fileRoutes);
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/stories', storyRouter);
 
 if (!localOnly) {
-  app.use("/files", fileRoutes!);
   app.use("/auth", authRouter!);
   app.use("/me", meRouter!);
   app.use("/users", userRouter!);
