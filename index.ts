@@ -2,21 +2,20 @@ import express from "express";
 import cors from "cors";
 import errorHandler from "./middlewares/errorHandlingMiddleware.ts";
 import storyRouter from "./routes/Story/story.routes.ts";
-import { setupLogger } from './utils/logger';
+import {setupLogger} from './utils/logger';
+import "./extensions/RequestExtension.ts";
 
 const localOnly = process.env.LOCAL_ONLY_DB === 'true';
 
-const { default: fileRoutes } = localOnly ? { default: null } : await import("./routes/files");
-const { default: authRouter } = localOnly ? { default: null } : await import("./routes/login.ts");
-const { default: meRouter } = localOnly ? { default: null } : await import("./routes/me.ts");
-const { default: userRouter } = localOnly ? { default: null } : await import("./routes/user.ts");
-
-import "./extensions/RequestExtension.ts";
+const {default: fileRoutes} = localOnly ? {default: null} : await import("./routes/files");
+const {default: authRouter} = localOnly ? {default: null} : await import("./routes/login.ts");
+const {default: meRouter} = localOnly ? {default: null} : await import("./routes/me.ts");
+const {default: userRouter} = localOnly ? {default: null} : await import("./routes/user.ts");
 
 const app = express();
 const port = 8000;
 
-const logger = setupLogger({ label: 'backend:prepare' });
+const logger = setupLogger({label: 'backend:prepare'});
 
 if (!localOnly) {
   if (process.env.KEYCLOAK_URL == null || process.env.KEYCLOAK_URL == ""
@@ -28,13 +27,13 @@ if (!localOnly) {
 
 const HARD_TIMEOUT_MS = 15000;
 
-const envKeys = [ 'DATABASE_URL', 'DATABASE_USER', 'DATABASE_HOST',
+const envKeys = ['DATABASE_URL', 'DATABASE_USER', 'DATABASE_HOST',
   'DATABASE_PORT', 'DATABASE_DB', 'KEYCLOAK_URL', 'DEBUG', 'KEYCLOAK_REALM', 'KEYCLOAK_CLIENT_ID',
   'KEYCLOAK_CLIENT_SECRET', 'KEYCLOAK_FRONTEND_CLIENT_ID', 'USE_AUTHENTICATION', 'MINIO_BUCKET', 'MINIO_ENDPOINT',
   'MINIO_USE_SSL', 'MINIO_PORT', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY', 'FRONTEND_URI'
 ];
 
-const sensitiveEnvKeys = [ 'DATABASE_URL', 'DATABASE_PASSWORD', 'KEYCLOAK_CLIENT_SECRET', 'MINIO_SECRET_KEY' ];
+const sensitiveEnvKeys = ['DATABASE_URL', 'DATABASE_PASSWORD', 'KEYCLOAK_CLIENT_SECRET', 'MINIO_SECRET_KEY'];
 
 logger.info('----------------------------------------');
 logger.info(`🚀 cut-dana-platform-backend listening at localhost:${port}`);
@@ -56,7 +55,7 @@ app.use((req, res, next) => {
   const timer = setTimeout(() => {
     if (!res.headersSent) {
       logger.error(`Timed out: ${req.method} ${req.originalUrl}`);
-      res.status(504).json({ message: "Gateway timeout" });
+      res.status(504).json({message: "Gateway timeout"});
     }
   }, HARD_TIMEOUT_MS);
   res.on("finish", () => clearTimeout(timer));
@@ -69,9 +68,9 @@ app.use(cors())
 app.use((req, res, next) => {
   const ct = req.headers['content-type'] || '';
   if (ct.startsWith('multipart/')) return next();
-  express.json({ limit: '10mb' })(req, res, next);
+  express.json({limit: '50mb'})(req, res, next);
 });
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true}));
 
 app.use('/stories', storyRouter);
 
@@ -92,7 +91,7 @@ if (!localOnly) {
   });
 
   app.use("/users", (req, res) => {
-    res.status(503).json({ message: "Users endpoint disabled in LOCAL_ONLY_DB mode" });
+    res.status(503).json({message: "Users endpoint disabled in LOCAL_ONLY_DB mode"});
   });
 }
 
