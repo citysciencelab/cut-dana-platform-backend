@@ -1,5 +1,4 @@
 import {Client} from "minio";
-import {MinioStorageEngine} from "@namatery/multer-minio";
 import multer from "multer";
 
 const localOnly = process.env.LOCAL_ONLY_DB === 'true';
