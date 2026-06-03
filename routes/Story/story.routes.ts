@@ -329,7 +329,17 @@ storyRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const user = req.user!;
 
-    const {title, description, chapters, scrollytelling, playerWidth, playerHeight, autoplayEnabled, autoplayIntervalSec, hideBackButton} = req.body as {
+    const {
+      title,
+      description,
+      chapters,
+      scrollytelling,
+      playerWidth,
+      playerHeight,
+      autoplayEnabled,
+      autoplayIntervalSec,
+      hideBackButton
+    } = req.body as {
       title: string;
       description: string;
       scrollytelling?: boolean;
