@@ -1,5 +1,6 @@
 import {type Request, type Response, Router} from "express";
 import {Prisma, PrismaClient} from "@prisma/client";
+import {Readable} from "node:stream";
 import authMiddleware, {isRequestFromAdmin, optionalAuthMiddleware} from "../../middlewares/authMiddleware";
 import asyncHandler from "../../handlers/asyncHandler";
 import {filesUpload, minioClient} from "../../utils/minio";
@@ -222,7 +223,7 @@ storyRouter.post(
       encoding: minioMetaData.encoding,
       key: minioMetaData.filename,
       provider: "minio",
-      providerMetaData: JSON.stringify(minioMetaData),
+      providerMetaData: minioMetaData as any,
     };
 
 
@@ -437,15 +438,30 @@ storyRouter.post(
       return res.status(500).json({message: "file not found", status: 500});
     }
 
+    const objectKey = `${Date.now()}-${minioMetaData.originalname}`;
+    const fileContext = `stories/${storyId}/steps/${stepId}`;
+    const localOnly = process.env.LOCAL_ONLY_DB === "true";
+
+    if (!localOnly) {
+      const stream = Readable.from(minioMetaData.buffer);
+      await minioClient!.putObject(
+        process.env.MINIO_BUCKET!,
+        objectKey,
+        stream,
+        minioMetaData.size,
+        {"Content-Type": minioMetaData.mimetype}
+      );
+    }
+
     const fileData = {
-      fileContext: `stories/${storyId}/steps/${stepId}`,
+      fileContext,
       filename: minioMetaData.originalname,
       mimetype: minioMetaData.mimetype,
       bucket: process.env.MINIO_BUCKET!,
       encoding: minioMetaData.encoding,
-      key: minioMetaData.filename,
-      provider: "minio",
-      providerMetaData: JSON.stringify(minioMetaData),
+      key: objectKey,
+      provider: localOnly ? "local" : "minio",
+      providerMetaData: JSON.stringify({originalname: minioMetaData.originalname, size: minioMetaData.size}),
     };
 
     let newFile = await prismaClient.file.create({data: fileData});
