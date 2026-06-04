@@ -215,17 +215,30 @@ storyRouter.post(
       });
     }
 
+    const objectKey = `${Date.now()}-${minioMetaData.originalname}`;
+    const localOnly = process.env.LOCAL_ONLY_DB === "true";
+
+    if (!localOnly) {
+      const stream = Readable.from(minioMetaData.buffer);
+      await minioClient!.putObject(
+        process.env.MINIO_BUCKET!,
+        objectKey,
+        stream,
+        minioMetaData.size,
+        {"Content-Type": minioMetaData.mimetype}
+      );
+    }
+
     const fileData = {
       fileContext: `stories/${storyId}`,
       filename: minioMetaData.originalname,
       mimetype: minioMetaData.mimetype,
       bucket: process.env.MINIO_BUCKET!,
       encoding: minioMetaData.encoding,
-      key: minioMetaData.filename,
-      provider: "minio",
-      providerMetaData: minioMetaData as any,
+      key: objectKey,
+      provider: localOnly ? "local" : "minio",
+      providerMetaData: JSON.stringify({originalname: minioMetaData.originalname, size: minioMetaData.size}),
     };
-
 
     let newFile = await prismaClient.file.create({data: fileData});
 
