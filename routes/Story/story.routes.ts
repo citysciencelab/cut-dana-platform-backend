@@ -1041,7 +1041,7 @@ storyRouter.post(
       logger.error("Error copying story:", error);
 
       // Compensating cleanup: delete the partially created story (cascade handles chapters/steps)
-      if (newStory) {
+      if (newStory?.id) {
         try {
           await prismaClient.story.delete({where: {id: newStory.id}});
         } catch (cleanupError) {
