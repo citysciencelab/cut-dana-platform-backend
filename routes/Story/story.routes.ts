@@ -390,6 +390,10 @@ storyRouter.post(
       return res.status(400).json({error: "chapters must be an array"});
     }
 
+    if (Object.prototype.hasOwnProperty.call(req.body ?? {}, "id") || Object.prototype.hasOwnProperty.call(req.body ?? {}, "storyId")) {
+      return res.status(400).json({error: "Story creation must not include an existing id."});
+    }
+
     const newStory = await prismaClient.$transaction(async (tx) => {
       return (tx.story as any).create({
         data: {
